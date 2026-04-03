@@ -4,412 +4,379 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <meta name="theme-color" content="#0d6efd">
-    <title>Sistema de Fiscalização de Rodovias</title>
+    <title>Controle Rodoviário</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS para exportar Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF para exportar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
+        * { box-sizing: border-box; }
+        body { 
+            padding-top: 20px; 
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
         }
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 15px; }
         
-        body {
-            padding-top: 20px;
-            background-color: #f8f9fa;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        .main-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            border-radius: 16px;
+            padding: 20px 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(13, 110, 253, 0.2);
+            position: relative;
+            overflow: hidden;
         }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 15px;
+        .main-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
         }
-        
-        h1 {
-            font-size: 1.5rem;
-            text-align: center;
-            margin-bottom: 1rem;
+        .main-header::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -5%;
+            width: 150px;
+            height: 150px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 50%;
         }
-        
+        .main-header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 0;
+            color: white;
+            letter-spacing: -0.5px;
+            position: relative;
+            z-index: 1;
+        }
+        .main-header h1 i {
+            margin-right: 12px;
+            font-size: 2rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+        .main-header .subtitle {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            font-weight: 400;
+            position: relative;
+            z-index: 1;
+        }
         @media (min-width: 768px) {
-            h1 {
-                font-size: 2rem;
-                margin-bottom: 1.5rem;
-            }
-        }
-        
-        @media (min-width: 992px) {
-            h1 {
-                font-size: 2.5rem;
-                margin-bottom: 2rem;
-            }
+            .main-header h1 { font-size: 2rem; }
+            .main-header .subtitle { font-size: 0.9rem; }
         }
         
         .nav-tabs {
-            margin-bottom: 20px;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: thin;
-            gap: 2px;
+            border-bottom: none;
+            gap: 8px;
+            margin-bottom: 25px;
+            background: white;
+            padding: 8px 16px;
+            border-radius: 60px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-        
-        .nav-tabs::-webkit-scrollbar {
-            height: 3px;
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 40px;
+            padding: 10px 24px;
+            font-weight: 500;
+            color: #495057;
+            transition: all 0.2s ease;
+            background: transparent;
         }
-        
-        .nav-tabs::-webkit-scrollbar-track {
+        .nav-tabs .nav-link:hover {
             background: #e9ecef;
-            border-radius: 3px;
+            color: #0d6efd;
+        }
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
         }
         
-        .nav-tabs::-webkit-scrollbar-thumb {
-            background: #0d6efd;
-            border-radius: 3px;
-        }
+        .table-responsive { margin-bottom: 20px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         
-        .nav-item {
-            flex-shrink: 0;
+        .card { 
+            margin-bottom: 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            border: none;
+            background: white;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        
-        .nav-link {
-            white-space: nowrap;
-            font-size: 0.85rem;
-            padding: 0.5rem 1rem;
+        .card:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
         }
-        
-        @media (min-width: 768px) {
-            .nav-link {
-                font-size: 1rem;
-                padding: 0.5rem 1rem;
-            }
-        }
-        
-        .table-responsive {
-            margin-bottom: 20px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        .card {
-            margin-bottom: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        .card-header { 
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            color: white; 
+            font-weight: 600; 
+            border-radius: 16px 16px 0 0 !important; 
+            padding: 14px 20px; 
+            font-size: 1rem;
             border: none;
         }
+        .card-header i { margin-right: 8px; }
+        @media (min-width: 768px) { .card-header { padding: 16px 24px; font-size: 1.1rem; } }
         
-        .card-header {
-            background-color: #0d6efd;
-            color: white;
-            font-weight: 600;
-            border-radius: 12px 12px 0 0 !important;
-            padding: 12px 16px;
-            font-size: 1rem;
-        }
+        .required-field::after { content: " *"; color: #ff6b6b; }
+        .multiple-contractors { color: #d63384; font-weight: bold; }
         
-        @media (min-width: 768px) {
-            .card-header {
-                padding: 16px 20px;
-                font-size: 1.1rem;
-            }
-        }
+        .search-box { position: relative; width: 100%; }
+        .search-box input { padding-right: 35px; width: 100%; border-radius: 40px; border: 1px solid #dee2e6; }
+        .search-box i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #6c757d; }
         
-        .required-field::after {
-            content: " *";
-            color: red;
-        }
+        .inspection-section { background-color: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e9ecef; position: relative; }
+        .remove-section { position: absolute; top: 10px; right: 10px; }
+        .add-section-btn { margin-top: 10px; width: 100%; border-radius: 40px; }
+        @media (min-width: 768px) { .add-section-btn { width: auto; } }
         
-        .multiple-contractors {
-            color: #d63384;
-            font-weight: bold;
-        }
+        .inspector-photo { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 10px; }
+        @media (min-width: 768px) { .inspector-photo { width: 50px; height: 50px; } }
         
-        .search-box {
-            position: relative;
-            width: 100%;
-        }
+        .btn-edit-contractor { margin-right: 5px; }
+        .contractor-name-display { cursor: pointer; }
+        .contractor-name-display:hover { text-decoration: underline; color: #0d6efd; }
         
-        .search-box input {
-            padding-right: 35px;
-            width: 100%;
-        }
+        .last-inspected-section { font-size: 0.75rem; color: #0d6efd; background-color: #e7f1ff; padding: 2px 6px; border-radius: 4px; display: inline-block; word-break: break-word; max-width: 300px; }
+        @media (min-width: 768px) { .last-inspected-section { font-size: 0.85rem; max-width: none; } }
         
-        .search-box i {
+        .inspector-badge { background-color: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; display: inline-block; margin: 2px; }
+        @media (min-width: 768px) { .inspector-badge { font-size: 0.8rem; padding: 2px 10px; } }
+        
+        .inspector-group { display: inline-flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        
+        .loading-spinner { display: inline-block; width: 1rem; height: 1rem; border: 2px solid #f3f3f3; border-top: 2px solid #0d6efd; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .sync-status { font-size: 0.7rem; color: #28a745; margin-left: 10px; display: inline-block; }
+        @media (min-width: 768px) { .sync-status { font-size: 0.8rem; } }
+        
+        .btn { border-radius: 40px; padding: 8px 20px; font-size: 0.85rem; font-weight: 500; transition: all 0.2s ease; }
+        .btn-primary { background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); border: none; }
+        .btn-primary:hover { background: linear-gradient(135deg, #0b5ed7 0%, #084298 100%); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3); }
+        .btn-outline-primary { border-radius: 40px; }
+        .btn-whatsapp { background: linear-gradient(135deg, #25D366 0%, #128C7E 100%); color: white; border: none; }
+        .btn-whatsapp:hover { background: linear-gradient(135deg, #128C7E 0%, #075E54 100%); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3); }
+        .btn-copy { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white; border: none; }
+        .btn-copy:hover { background: linear-gradient(135deg, #495057 0%, #343a40 100%); transform: translateY(-1px); }
+        
+        .form-control, .form-select { border-radius: 12px; padding: 10px 14px; font-size: 0.85rem; border: 1px solid #dee2e6; transition: all 0.2s ease; }
+        .form-control:focus, .form-select:focus { border-color: #0d6efd; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1); }
+        @media (min-width: 768px) { .form-control, .form-select { padding: 12px 16px; font-size: 0.9rem; } }
+        
+        .form-label { font-size: 0.8rem; font-weight: 600; margin-bottom: 6px; color: #495057; text-transform: uppercase; letter-spacing: 0.5px; }
+        @media (min-width: 768px) { .form-label { font-size: 0.85rem; } }
+        
+        .table { font-size: 0.75rem; border-radius: 12px; overflow: hidden; }
+        @media (min-width: 768px) { .table { font-size: 0.85rem; } }
+        .table th { background-color: #f8f9fa; font-weight: 600; color: #495057; border-bottom: 2px solid #dee2e6; }
+        .table th, .table td { padding: 10px 8px; vertical-align: middle; }
+        @media (min-width: 768px) { .table th, .table td { padding: 14px 12px; } }
+        
+        @media (max-width: 480px) { .row { margin-left: -6px; margin-right: -6px; } .col-6, .col-md-3, .col-md-4, .col-md-6 { padding-left: 6px; padding-right: 6px; } .card-body { padding: 12px; } .btn-sm { padding: 4px 8px; font-size: 0.7rem; } }
+        @media (hover: none) and (pointer: coarse) { button, .btn, .nav-link, .contractor-name-display { min-height: 44px; } .btn-sm { min-height: 36px; } input, select, textarea { font-size: 16px !important; } }
+        
+        .modal-content { border-radius: 20px; border: none; }
+        .modal-header { border-bottom: none; padding: 20px 24px 0 24px; }
+        .modal-body { padding: 20px 24px; }
+        .modal-footer { border-top: none; padding: 0 24px 20px 24px; }
+        
+        .badge { font-size: 0.7rem; padding: 4px 8px; border-radius: 40px; }
+        
+        .filter-group { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+        .filter-group .search-box { flex: 2; min-width: 180px; }
+        .filter-group .date-filter { flex: 1; min-width: 140px; }
+        @media (max-width: 768px) { .filter-group { flex-direction: column; } .filter-group .search-box, .filter-group .date-filter { width: 100%; } }
+        
+        .float-export-btn { position: fixed; bottom: 30px; right: 30px; z-index: 1000; display: flex; flex-direction: column; align-items: flex-end; }
+        .float-export-btn .main-btn { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: white; border: none; box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3); cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; position: relative; z-index: 2; }
+        .float-export-btn .main-btn:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(13, 110, 253, 0.4); }
+        .float-export-btn .export-options { position: absolute; bottom: 70px; right: 0; display: flex; flex-direction: column; gap: 12px; background: transparent; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease; z-index: 1; }
+        .float-export-btn:hover .export-options, .float-export-btn .export-options:hover { opacity: 1; visibility: visible; transform: translateY(0); }
+        .export-option { width: 48px; height: 48px; border-radius: 50%; background-color: white; color: #0d6efd; border: 1px solid #e9ecef; box-shadow: 0 2px 10px rgba(0,0,0,0.1); cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .export-option:hover { transform: scale(1.1); background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: white; border-color: transparent; }
+        @media (max-width: 768px) { .float-export-btn { bottom: 20px; right: 20px; } .float-export-btn .main-btn { width: 48px; height: 48px; font-size: 1.2rem; } .export-option { width: 42px; height: 42px; font-size: 1rem; } .float-export-btn .export-options { bottom: 60px; gap: 10px; } }
+        
+        .auto-fill-hint { font-size: 0.65rem; color: #6c757d; margin-top: 4px; }
+        
+        .road-decoration {
             position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #6c757d;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ffd700, #ff9800, #ffd700);
         }
         
-        .inspection-section {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #dee2e6;
-            position: relative;
-        }
-        
-        .remove-section {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-        }
-        
-        .add-section-btn {
-            margin-top: 10px;
-            width: 100%;
-        }
-        
-        @media (min-width: 768px) {
-            .add-section-btn {
-                width: auto;
-            }
-        }
-        
-        .inspector-photo {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 10px;
-        }
-        
-        @media (min-width: 768px) {
-            .inspector-photo {
-                width: 50px;
-                height: 50px;
-            }
-        }
-        
-        .btn-edit-contractor {
-            margin-right: 5px;
-        }
-        
-        .contractor-name-display {
-            cursor: pointer;
-        }
-        
-        .contractor-name-display:hover {
-            text-decoration: underline;
-            color: #0d6efd;
-        }
-        
-        .last-inspected-section {
-            font-size: 0.75rem;
-            color: #0d6efd;
-            background-color: #e7f1ff;
-            padding: 2px 6px;
-            border-radius: 4px;
-            display: inline-block;
-            word-break: break-word;
-            max-width: 200px;
-        }
-        
-        @media (min-width: 768px) {
-            .last-inspected-section {
-                font-size: 0.85rem;
-                max-width: none;
-            }
-        }
-        
-        .inspector-badge {
-            background-color: #e9ecef;
-            color: #495057;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            display: inline-block;
-            margin: 2px;
-        }
-        
-        @media (min-width: 768px) {
-            .inspector-badge {
-                font-size: 0.8rem;
-                padding: 2px 10px;
-            }
-        }
-        
-        .inspector-group {
-            display: inline-flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            align-items: center;
-        }
-        
-        .loading-spinner {
-            display: inline-block;
-            width: 1rem;
-            height: 1rem;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid #0d6efd;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 8px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .sync-status {
-            font-size: 0.7rem;
-            color: #28a745;
-            margin-left: 10px;
-            display: inline-block;
-        }
-        
-        @media (min-width: 768px) {
-            .sync-status {
-                font-size: 0.8rem;
-            }
-        }
-        
-        .btn {
-            border-radius: 8px;
-            padding: 8px 16px;
-            font-size: 0.85rem;
-        }
-        
-        @media (min-width: 768px) {
-            .btn {
-                padding: 10px 20px;
-                font-size: 1rem;
-            }
-        }
-        
-        .form-control, .form-select {
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 0.85rem;
-        }
-        
-        @media (min-width: 768px) {
-            .form-control, .form-select {
-                padding: 10px 12px;
-                font-size: 1rem;
-            }
-        }
-        
-        .form-label {
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin-bottom: 5px;
-        }
-        
-        @media (min-width: 768px) {
-            .form-label {
-                font-size: 0.9rem;
-            }
-        }
-        
-        .table {
-            font-size: 0.75rem;
-        }
-        
-        @media (min-width: 768px) {
-            .table {
-                font-size: 0.9rem;
-            }
-        }
-        
-        .table th, .table td {
-            padding: 8px 6px;
-            vertical-align: middle;
-        }
-        
-        @media (min-width: 768px) {
-            .table th, .table td {
-                padding: 12px;
-            }
-        }
-        
-        /* Ajustes para telas muito pequenas */
-        @media (max-width: 480px) {
-            .row {
-                margin-left: -6px;
-                margin-right: -6px;
-            }
-            .col-6, .col-md-3, .col-md-4, .col-md-6 {
-                padding-left: 6px;
-                padding-right: 6px;
-            }
-            .card-body {
-                padding: 12px;
-            }
-            .btn-sm {
-                padding: 4px 8px;
-                font-size: 0.7rem;
-            }
-        }
-        
-        /* Melhorias de toque para mobile */
-        @media (hover: none) and (pointer: coarse) {
-            button, .btn, .nav-link, .contractor-name-display {
-                min-height: 44px;
-            }
-            .btn-sm {
-                min-height: 36px;
-            }
-            input, select, textarea {
-                font-size: 16px !important;
-            }
-        }
-        
-        .modal-content {
+        .whatsapp-message-container {
+            background: linear-gradient(135deg, #dcf8c5 0%, #c4e9b0 100%);
             border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #b8e0a0;
+            position: relative;
         }
-        
-        .modal-header {
-            border-bottom: none;
+        .whatsapp-message-container::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid #c4e9b0;
+        }
+        .whatsapp-message {
+            background: white;
+            border-radius: 12px;
             padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 12px;
+            border: 1px solid #dee2e6;
         }
         
-        .modal-body {
-            padding: 16px;
+        .progress-notification {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            z-index: 10000;
+            width: 380px;
+            max-width: 90vw;
+            overflow: hidden;
+            animation: slideUp 0.3s ease;
         }
         
-        .badge {
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        
+        .progress-notification .notification-content {
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .progress-notification .notification-icon {
+            font-size: 3rem;
+            color: #25D366;
+            margin-bottom: 10px;
+        }
+        
+        .progress-notification .notification-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #28a745;
+        }
+        
+        .progress-notification .notification-message {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+        
+        .progress-notification .progress-bar-container {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 6px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        
+        .progress-notification .progress-bar-fill {
+            background: linear-gradient(90deg, #25D366, #128C7E);
+            width: 0%;
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.1s linear;
+        }
+        
+        .progress-notification .btn-ok {
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 30px;
+            font-weight: 500;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .progress-notification .btn-ok:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+        }
+        
+        .progress-notification .timer-text {
             font-size: 0.7rem;
-            padding: 4px 8px;
+            color: #adb5bd;
+            margin-top: 8px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 class="text-center mb-3 mb-md-4">
-            <i class="fas fa-road me-2"></i>Sistema de Fiscalização de Rodovias
-            <span id="syncStatus" class="sync-status"><span class="loading-spinner"></span>Sincronizando...</span>
-        </h1>
+        <div class="main-header">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h1>
+                        <i class="fas fa-road me-2"></i>Controle Rodoviário
+                        <span id="syncStatus" class="sync-status"><span class="loading-spinner"></span>Sincronizando...</span>
+                    </h1>
+                    <div class="subtitle">Sistema de gestão de vistorias e fiscalização de rodovias</div>
+                </div>
+            </div>
+            <div class="road-decoration"></div>
+        </div>
         
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button" role="tab">
-                    <i class="fas fa-clipboard-check me-1"></i> Registrar
-                </button>
+                <button class="nav-link active" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button" role="tab"><i class="fas fa-clipboard-list me-2"></i> Registrar Vistoria</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="roads-tab" data-bs-toggle="tab" data-bs-target="#roads" type="button" role="tab">
-                    <i class="fas fa-road me-1"></i> Rodovias
-                </button>
+                <button class="nav-link" id="roads-tab" data-bs-toggle="tab" data-bs-target="#roads" type="button" role="tab"><i class="fas fa-road me-2"></i> Rodovias</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="contractors-tab" data-bs-toggle="tab" data-bs-target="#contractors" type="button" role="tab">
-                    <i class="fas fa-building me-1"></i> Empreiteiras
-                </button>
+                <button class="nav-link" id="contractors-tab" data-bs-toggle="tab" data-bs-target="#contractors" type="button" role="tab"><i class="fas fa-building me-2"></i> Empreiteiras</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="inspectors-tab" data-bs-toggle="tab" data-bs-target="#inspectors" type="button" role="tab">
-                    <i class="fas fa-user-tie me-1"></i> Fiscais
-                </button>
+                <button class="nav-link" id="inspectors-tab" data-bs-toggle="tab" data-bs-target="#inspectors" type="button" role="tab"><i class="fas fa-users me-2"></i> Fiscais</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="control-tab" data-bs-toggle="tab" data-bs-target="#control" type="button" role="tab">
-                    <i class="fas fa-calendar-alt me-1"></i> Controle
-                </button>
+                <button class="nav-link" id="control-tab" data-bs-toggle="tab" data-bs-target="#control" type="button" role="tab"><i class="fas fa-chart-line me-2"></i> Controle</button>
             </li>
         </ul>
         
@@ -417,21 +384,29 @@
             <!-- Registrar Vistoria -->
             <div class="tab-pane fade show active" id="register" role="tabpanel">
                 <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-clipboard-check me-2"></i>Registrar Nova Vistoria (Múltiplos Trechos)
-                    </div>
+                    <div class="card-header"><i class="fas fa-clipboard-list me-2"></i>Registrar Nova Vistoria</div>
                     <div class="card-body">
                         <form id="inspectionForm">
-                            <div class="row mb-3">
-                                <div class="col-12 col-md-6 mb-3 mb-md-0">
-                                    <label for="inspectorName" class="form-label required-field">Fiscal</label>
+                            <div class="row mb-4">
+                                <div class="col-12 col-md-4 mb-3 mb-md-0">
+                                    <label for="inspectorName" class="form-label required-field">Fiscal Responsável</label>
                                     <select class="form-select" id="inspectorName" required>
                                         <option value="" selected disabled>Selecione o fiscal</option>
                                     </select>
                                 </div>
-                                <div class="col-12 col-md-6">
+                                <div class="col-12 col-md-4 mb-3 mb-md-0">
                                     <label for="inspectionDate" class="form-label required-field">Data da Vistoria</label>
                                     <input type="date" class="form-control" id="inspectionDate" required>
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-12 col-md-4 mb-3 mb-md-0">
+                                    <label for="inspectionTimeStart" class="form-label">Horário de Entrada (para relatório)</label>
+                                    <input type="time" class="form-control" id="inspectionTimeStart" value="08:30">
+                                </div>
+                                <div class="col-12 col-md-4 mb-3 mb-md-0">
+                                    <label for="inspectionTimeEnd" class="form-label">Horário de Saída (para relatório)</label>
+                                    <input type="time" class="form-control" id="inspectionTimeEnd" value="17:30">
                                 </div>
                             </div>
                             
@@ -439,9 +414,7 @@
                                 <label class="form-label required-field">Trechos Vistoriados</label>
                                 <div id="sectionsContainer">
                                     <div class="inspection-section" data-section-index="0">
-                                        <button type="button" class="btn btn-sm btn-danger remove-section" style="display: none;">
-                                            <i class="fas fa-times"></i>
-                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger remove-section" style="display: none;"><i class="fas fa-times"></i></button>
                                         <div class="row">
                                             <div class="col-12 col-md-6 mb-3 mb-md-0">
                                                 <label class="form-label">Rodovia</label>
@@ -454,33 +427,37 @@
                                                 <div class="form-control bg-light contractor-info" style="min-height: 42px;"></div>
                                             </div>
                                         </div>
-                                        <div class="row mt-2">
+                                        <div class="row mt-3">
                                             <div class="col-6">
                                                 <label class="form-label">KM Inicial</label>
                                                 <input type="number" step="0.001" class="form-control start-km" required>
+                                                <div class="auto-fill-hint"><i class="fas fa-magic me-1"></i>Preenchido automaticamente</div>
                                             </div>
                                             <div class="col-6">
                                                 <label class="form-label">KM Final</label>
                                                 <input type="number" step="0.001" class="form-control end-km" required>
+                                                <div class="auto-fill-hint"><i class="fas fa-magic me-1"></i>Preenchido automaticamente</div>
                                             </div>
                                         </div>
-                                        <div class="row mt-2">
-                                            <div class="col-12">
-                                                <label class="form-label">Observações (opcional)</label>
-                                                <textarea class="form-control observations" rows="2"></textarea>
-                                            </div>
+                                        <div class="row mt-3">
+                                            <div class="col-12"><label class="form-label">Observações</label><textarea class="form-control observations" rows="2" placeholder="Observações adicionais sobre a vistoria..."></textarea></div>
                                         </div>
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-outline-primary add-section-btn mt-2" id="addSectionBtn">
-                                    <i class="fas fa-plus me-1"></i>Adicionar outro trecho
-                                </button>
+                                <button type="button" class="btn btn-outline-primary add-section-btn mt-3" id="addSectionBtn"><i class="fas fa-plus me-2"></i>Adicionar outro trecho</button>
                             </div>
                             
-                            <button type="submit" class="btn btn-primary w-100 w-md-auto">
-                                <i class="fas fa-save me-2"></i>Salvar Todas as Vistorias
-                            </button>
+                            <button type="submit" class="btn btn-primary px-4 py-2"><i class="fas fa-save me-2"></i>Salvar Vistorias</button>
                         </form>
+                        
+                        <div id="whatsappMessageArea" class="whatsapp-message-container" style="display: none;">
+                            <h6 class="mb-2"><i class="fab fa-whatsapp me-2 text-success"></i>Mensagem para WhatsApp</h6>
+                            <div class="whatsapp-message" id="whatsappMessage"></div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-whatsapp btn-sm" id="sendWhatsAppBtn"><i class="fab fa-whatsapp me-2"></i>Enviar para WhatsApp</button>
+                                <button class="btn btn-copy btn-sm" id="copyMessageBtn"><i class="fas fa-copy me-2"></i>Copiar Mensagem</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -488,72 +465,32 @@
             <!-- Cadastrar Rodovias -->
             <div class="tab-pane fade" id="roads" role="tabpanel">
                 <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-road me-2"></i>Cadastrar Nova Rodovia
-                    </div>
+                    <div class="card-header"><i class="fas fa-road me-2"></i>Cadastrar Nova Rodovia</div>
                     <div class="card-body">
                         <form id="roadForm">
                             <div class="row mb-3">
-                                <div class="col-4">
-                                    <label for="roadType" class="form-label required-field">Tipo</label>
-                                    <select class="form-select" id="roadType" required>
-                                        <option value="SP">SP</option>
-                                        <option value="SPA">SPA</option>
-                                        <option value="SPD">SPD</option>
-                                    </select>
-                                </div>
-                                <div class="col-4">
-                                    <label for="roadNumber" class="form-label required-field">Número</label>
-                                    <input type="text" class="form-control" id="roadNumber" required>
-                                </div>
-                                <div class="col-4">
-                                    <label for="roadContractor" class="form-label">Empreiteira Padrão</label>
-                                    <select class="form-select" id="roadContractor">
-                                        <option value="">Nenhuma</option>
-                                    </select>
-                                </div>
+                                <div class="col-4"><label for="roadType" class="form-label required-field">Tipo</label><select class="form-select" id="roadType" required><option value="SP">SP</option><option value="SPA">SPA</option><option value="SPD">SPD</option></select></div>
+                                <div class="col-4"><label for="roadNumber" class="form-label required-field">Número</label><input type="text" class="form-control" id="roadNumber" required placeholder="Ex: 270"></div>
+                                <div class="col-4"><label for="roadContractor" class="form-label">Empreiteira Padrão</label><select class="form-select" id="roadContractor"><option value="">Nenhuma</option></select></div>
                             </div>
-                            
                             <div class="row mb-3">
-                                <div class="col-6">
-                                    <label for="roadStartKm" class="form-label required-field">KM Inicial</label>
-                                    <input type="number" step="0.001" class="form-control" id="roadStartKm" required>
-                                </div>
-                                <div class="col-6">
-                                    <label for="roadEndKm" class="form-label required-field">KM Final</label>
-                                    <input type="number" step="0.001" class="form-control" id="roadEndKm" required>
-                                </div>
+                                <div class="col-6"><label for="roadStartKm" class="form-label required-field">KM Inicial</label><input type="number" step="0.001" class="form-control" id="roadStartKm" required placeholder="0"></div>
+                                <div class="col-6"><label for="roadEndKm" class="form-label required-field">KM Final</label><input type="number" step="0.001" class="form-control" id="roadEndKm" required placeholder="0"></div>
                             </div>
-                            
-                            <div class="mb-3">
-                                <label for="roadDescription" class="form-label">Descrição</label>
-                                <textarea class="form-control" id="roadDescription" rows="2"></textarea>
-                            </div>
-                            
-                            <button type="submit" class="btn btn-primary w-100 w-md-auto">
-                                <i class="fas fa-save me-2"></i>Cadastrar Rodovia
-                            </button>
+                            <div class="mb-3"><label for="roadDescription" class="form-label">Descrição</label><textarea class="form-control" id="roadDescription" rows="2" placeholder="Informações adicionais sobre a rodovia..."></textarea></div>
+                            <button type="submit" class="btn btn-primary w-100 w-md-auto px-4 py-2"><i class="fas fa-save me-2"></i>Cadastrar Rodovia</button>
                         </form>
                     </div>
                 </div>
-                
                 <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-list me-2"></i>Trechos de Rodovias Cadastrados
-                    </div>
+                    <div class="card-header"><i class="fas fa-list me-2"></i>Rodovias Cadastradas</div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-striped table-hover" id="roadSectionsTable">
+                            <table class="table table-hover" id="roadSectionsTable">
                                 <thead>
-                                    32
-                                        <th>Rodovia</th>
-                                        <th>Trecho (KM)</th>
-                                        <th>Extensão</th>
-                                        <th>Empreiteira(s)</th>
-                                        <th>Ações</th>
-                                    </thead>
-                                <tbody>
-                                </tbody>
+                                    <tr><th>Rodovia</th><th>Extensão (KM)</th><th>Empreiteira(s)</th><th>Ações</th></tr>
+                                </thead>
+                                <tbody id="roadSectionsTableBody"></tbody>
                             </table>
                         </div>
                     </div>
@@ -563,37 +500,23 @@
             <!-- Cadastrar Empreiteiras -->
             <div class="tab-pane fade" id="contractors" role="tabpanel">
                 <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-building me-2"></i>Cadastrar Nova Empreiteira
-                    </div>
+                    <div class="card-header"><i class="fas fa-building me-2"></i>Cadastrar Nova Empreiteira</div>
                     <div class="card-body">
                         <form id="contractorForm">
-                            <div class="mb-3">
-                                <label for="contractorName" class="form-label required-field">Nome da Empreiteira</label>
-                                <input type="text" class="form-control" id="contractorName" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100 w-md-auto">
-                                <i class="fas fa-save me-2"></i>Cadastrar Empreiteira
-                            </button>
+                            <div class="mb-3"><label for="contractorName" class="form-label required-field">Nome da Empreiteira</label><input type="text" class="form-control" id="contractorName" required placeholder="Ex: Construtora ABC"></div>
+                            <button type="submit" class="btn btn-primary w-100 w-md-auto px-4 py-2"><i class="fas fa-save me-2"></i>Cadastrar Empreiteira</button>
                         </form>
                     </div>
                 </div>
-                
                 <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-list me-2"></i>Empreiteiras Cadastradas
-                    </div>
+                    <div class="card-header"><i class="fas fa-list me-2"></i>Empreiteiras Cadastradas</div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-striped table-hover" id="contractorsTable">
+                            <table class="table table-hover" id="contractorsTable">
                                 <thead>
-                                    32
-                                        <th>Nome</th>
-                                        <th>Trechos</th>
-                                        <th>Ações</th>
-                                    </thead>
-                                <tbody>
-                                </tbody>
+                                    <tr><th>Nome</th><th>Trechos</th><th>Ações</th></tr>
+                                </thead>
+                                <tbody id="contractorsTableBody"></tbody>
                             </table>
                         </div>
                     </div>
@@ -603,45 +526,26 @@
             <!-- Cadastrar Fiscais -->
             <div class="tab-pane fade" id="inspectors" role="tabpanel">
                 <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-user-tie me-2"></i>Cadastrar Novo Fiscal
-                    </div>
+                    <div class="card-header"><i class="fas fa-users me-2"></i>Cadastrar Novo Fiscal</div>
                     <div class="card-body">
                         <form id="inspectorForm">
                             <div class="row mb-3">
-                                <div class="col-12 col-md-6 mb-3 mb-md-0">
-                                    <label for="inspectorFullName" class="form-label required-field">Nome Completo</label>
-                                    <input type="text" class="form-control" id="inspectorFullName" required>
-                                </div>
-                                <div class="col-12 col-md-6">
-                                    <label for="inspectorRegistration" class="form-label required-field">Matrícula</label>
-                                    <input type="text" class="form-control" id="inspectorRegistration" required>
-                                </div>
+                                <div class="col-12 col-md-6 mb-3 mb-md-0"><label for="inspectorFullName" class="form-label required-field">Nome Completo</label><input type="text" class="form-control" id="inspectorFullName" required placeholder="Nome do fiscal"></div>
+                                <div class="col-12 col-md-6"><label for="inspectorRegistration" class="form-label required-field">Matrícula</label><input type="text" class="form-control" id="inspectorRegistration" required placeholder="Número da matrícula"></div>
                             </div>
-                            <button type="submit" class="btn btn-primary w-100 w-md-auto">
-                                <i class="fas fa-save me-2"></i>Cadastrar Fiscal
-                            </button>
+                            <button type="submit" class="btn btn-primary w-100 w-md-auto px-4 py-2"><i class="fas fa-save me-2"></i>Cadastrar Fiscal</button>
                         </form>
                     </div>
                 </div>
-                
                 <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-list me-2"></i>Fiscais Cadastrados
-                    </div>
+                    <div class="card-header"><i class="fas fa-list me-2"></i>Fiscais Cadastrados</div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-striped table-hover" id="inspectorsTable">
+                            <table class="table table-hover" id="inspectorsTable">
                                 <thead>
-                                    32
-                                        <th>Foto</th>
-                                        <th>Nome</th>
-                                        <th>Matrícula</th>
-                                        <th>Vistorias</th>
-                                        <th>Ações</th>
-                                    </thead>
-                                <tbody>
-                                </tbody>
+                                    <tr><th>Foto</th><th>Nome</th><th>Matrícula</th><th>Vistorias</th><th>Ações</th></tr>
+                                </thead>
+                                <tbody id="inspectorsTableBody"></tbody>
                             </table>
                         </div>
                     </div>
@@ -651,53 +555,42 @@
             <!-- Controle -->
             <div class="tab-pane fade" id="control" role="tabpanel">
                 <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-calendar-alt me-2"></i>Controle de Vistorias por Rodovia
-                    </div>
+                    <div class="card-header"><i class="fas fa-chart-line me-2"></i>Controle de Vistorias</div>
                     <div class="card-body">
-                        <div class="row mb-3">
-                            <div class="col-12 col-md-6 mb-3 mb-md-0">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="showOnlyOverdue" checked>
-                                    <label class="form-check-label" for="showOnlyOverdue">
-                                        Mostrar apenas rodovias com vistorias atrasadas
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div class="search-box">
-                                    <input type="text" class="form-control" id="searchRoad" placeholder="Buscar rodovia...">
-                                    <i class="fas fa-search"></i>
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="filter-group">
+                                    <div class="search-box"><input type="text" class="form-control" id="searchRoad" placeholder="Buscar rodovia..."><i class="fas fa-search"></i></div>
+                                    <div class="date-filter"><select class="form-select" id="dateFilter"><option value="all">Todas as vistorias</option><option value="7">Últimos 7 dias</option><option value="15">Últimos 15 dias</option><option value="30">Últimos 30 dias</option><option value="60">Últimos 60 dias</option><option value="90">Últimos 90 dias</option></select></div>
+                                    <button class="btn btn-primary" id="refreshControl"><i class="fas fa-sync-alt me-2"></i>Atualizar</button>
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-12 text-end">
-                                <button class="btn btn-primary w-100 w-md-auto" id="refreshControl">
-                                    <i class="fas fa-sync-alt me-2"></i>Atualizar
-                                </button>
-                            </div>
-                        </div>
-                        
                         <div class="table-responsive">
-                            <table class="table table-striped table-hover" id="controlTable">
+                            <table class="table table-hover" id="controlTable">
                                 <thead>
-                                    32
+                                    <tr>
                                         <th>Rodovia</th>
                                         <th>Data da Última Vistoria</th>
-                                        <th>Fiscal(is) da Última Vistoria</th>
-                                        <th>Último Trecho Vistoriado</th>
-                                        <th>Dias Sem Vistoria</th>
-                                    </thead>
-                                <tbody>
-                                    <tr><td colspan="5" class="text-center">Carregando dados...</td></tr>
-                                </tbody>
+                                        <th>Fiscais</th>
+                                        <th>Último Trecho</th>
+                                        <th>Dias</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="controlTableBody"></tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="float-export-btn">
+        <button class="main-btn" title="Exportar"><i class="fas fa-download"></i></button>
+        <div class="export-options">
+            <button class="export-option" id="exportExcelBtn" title="Exportar para Excel"><i class="fas fa-file-excel"></i></button>
+            <button class="export-option" id="exportPDFBtn" title="Exportar para PDF"><i class="fas fa-file-pdf"></i></button>
         </div>
     </div>
 
@@ -705,105 +598,52 @@
     <div class="modal fade" id="inspectionModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Detalhes da Vistoria</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+                <div class="modal-header"><h5 class="modal-title">Detalhes da Vistoria</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body" id="inspectionDetails"></div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button></div>
             </div>
         </div>
     </div>
-
+    
     <div class="modal fade" id="sectionsModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Gerenciar Trechos da Rodovia</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+                <div class="modal-header"><h5 class="modal-title">Gerenciar Trechos da Rodovia</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <h6>Trechos Cadastrados</h6>
-                        <div class="table-responsive">
-                            <table class="table table-sm" id="roadSectionsModalTable">
-                                <thead>
-                                    32
-                                        <th>KM Inicial</th>
-                                        <th>KM Final</th>
-                                        <th>Empreiteira</th>
-                                        <th>Ações</th>
-                                    </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div class="mb-3"><h6>Trechos Cadastrados</h6><div class="table-responsive"><table class="table table-sm" id="roadSectionsModalTable"><thead><tr><th>KM Inicial</th><th>KM Final</th><th>Empreiteira</th><th>Ações</th></tr></thead><tbody id="roadSectionsModalTableBody"></tbody></table></div></div>
                     <hr>
                     <h6>Adicionar Novo Trecho</h6>
                     <form id="sectionForm">
                         <input type="hidden" id="modalRoadId">
                         <div class="row mb-3">
-                            <div class="col-4">
-                                <label class="form-label">KM Inicial</label>
-                                <input type="number" step="0.001" class="form-control" id="sectionStartKm" required>
-                            </div>
-                            <div class="col-4">
-                                <label class="form-label">KM Final</label>
-                                <input type="number" step="0.001" class="form-control" id="sectionEndKm" required>
-                            </div>
-                            <div class="col-4">
-                                <label class="form-label">Empreiteira</label>
-                                <select class="form-select" id="sectionContractor" required>
-                                    <option value="" selected disabled>Selecione</option>
-                                </select>
-                            </div>
+                            <div class="col-4"><label class="form-label">KM Inicial</label><input type="number" step="0.001" class="form-control" id="sectionStartKm" required></div>
+                            <div class="col-4"><label class="form-label">KM Final</label><input type="number" step="0.001" class="form-control" id="sectionEndKm" required></div>
+                            <div class="col-4"><label class="form-label">Empreiteira</label><select class="form-select" id="sectionContractor" required><option value="" selected disabled>Selecione</option></select></div>
                         </div>
                         <button type="submit" class="btn btn-primary w-100"><i class="fas fa-plus"></i> Adicionar</button>
                     </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button></div>
             </div>
         </div>
     </div>
-
+    
     <div class="modal fade" id="editContractorModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Editar Empreiteira</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="editContractorId">
-                    <div class="mb-3">
-                        <label class="form-label required-field">Nome da Empreiteira</label>
-                        <input type="text" class="form-control" id="editContractorName" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="saveContractorEdit">Salvar</button>
-                </div>
+                <div class="modal-header"><h5 class="modal-title">Editar Empreiteira</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body"><input type="hidden" id="editContractorId"><div class="mb-3"><label class="form-label required-field">Nome da Empreiteira</label><input type="text" class="form-control" id="editContractorName" required></div></div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-primary" id="saveContractorEdit">Salvar</button></div>
             </div>
         </div>
     </div>
-
+    
     <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Confirmação</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+                <div class="modal-header"><h5 class="modal-title">Confirmação</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body" id="confirmMessage"></div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger" id="confirmAction">Confirmar</button>
-                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-danger" id="confirmAction">Confirmar</button></div>
             </div>
         </div>
     </div>
@@ -811,11 +651,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script type="module">
-        // ============================================
-        // FIREBASE CONFIGURATION - SUAS CREDENCIAIS
-        // ============================================
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyDBxJ9X9cG1s_pXadpdG12BOhSQMJL91d0",
@@ -829,49 +666,167 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
-        // Coleções
-        const COLLECTIONS = {
-            INSPECTORS: 'inspectors',
-            CONTRACTORS: 'contractors',
-            ROADS: 'roads',
-            INSPECTIONS: 'inspections'
-        };
+        const COLLECTIONS = { INSPECTORS: 'inspectors', CONTRACTORS: 'contractors', ROADS: 'roads', INSPECTIONS: 'inspections' };
         
-        // Dados locais
         let inspectors = [];
         let contractors = [];
         let roads = [];
         let inspections = [];
-        let pendingAction = null;
         let sectionCounter = 1;
         
         const syncStatusEl = document.getElementById('syncStatus');
         
-        function showLoading() {
-            if (syncStatusEl) {
-                syncStatusEl.innerHTML = '<span class="loading-spinner"></span>Sincronizando...';
-                syncStatusEl.style.color = '#0d6efd';
+        let activeNotification = null;
+        let notificationInterval = null;
+        
+        function showProgressNotification(message, duration = 15) {
+            if (activeNotification) {
+                if (notificationInterval) clearInterval(notificationInterval);
+                activeNotification.remove();
+            }
+            
+            const notification = document.createElement('div');
+            notification.className = 'progress-notification';
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <div class="notification-icon">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <div class="notification-title">✓ Mensagem Copiada!</div>
+                    <div class="notification-message">${message}</div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressFill"></div>
+                    </div>
+                    <button class="btn-ok" id="notificationOkBtn">OK</button>
+                    <div class="timer-text" id="timerText">Fechando em ${duration} segundos...</div>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            activeNotification = notification;
+            
+            const progressFill = notification.querySelector('#progressFill');
+            const timerText = notification.querySelector('#timerText');
+            const okBtn = notification.querySelector('#notificationOkBtn');
+            
+            let timeLeft = duration;
+            const startTime = Date.now();
+            
+            function updateProgress() {
+                const elapsed = (Date.now() - startTime) / 1000;
+                const remaining = Math.max(0, duration - elapsed);
+                const percent = (elapsed / duration) * 100;
+                
+                progressFill.style.width = Math.min(100, percent) + '%';
+                timerText.textContent = `Fechando em ${Math.ceil(remaining)} segundos...`;
+                
+                if (remaining <= 0) {
+                    if (notificationInterval) clearInterval(notificationInterval);
+                    notification.remove();
+                    activeNotification = null;
+                    notificationInterval = null;
+                }
+            }
+            
+            notificationInterval = setInterval(updateProgress, 100);
+            
+            okBtn.addEventListener('click', () => {
+                if (notificationInterval) clearInterval(notificationInterval);
+                notification.remove();
+                activeNotification = null;
+                notificationInterval = null;
+            });
+        }
+        
+        function sortRoads(roadsArray) {
+            const order = { 'SP': 1, 'SPA': 2, 'SPD': 3 };
+            return [...roadsArray].sort((a, b) => {
+                const typeCompare = (order[a.type] || 99) - (order[b.type] || 99);
+                if (typeCompare !== 0) return typeCompare;
+                const numA = parseInt(a.number) || 0;
+                const numB = parseInt(b.number) || 0;
+                return numA - numB;
+            });
+        }
+        
+        function showLoading() { if (syncStatusEl) { syncStatusEl.innerHTML = '<span class="loading-spinner"></span>Sincronizando...'; syncStatusEl.style.color = 'rgba(255,255,255,0.9)'; } }
+        function showSyncSuccess() { if (syncStatusEl) { syncStatusEl.innerHTML = '<i class="fas fa-check-circle me-1"></i>Sincronizado'; syncStatusEl.style.color = 'rgba(255,255,255,0.9)'; setTimeout(() => { if (syncStatusEl) syncStatusEl.innerHTML = ''; }, 2000); } }
+        
+        function gerarMensagemWhatsApp() {
+            const fiscalSelect = document.getElementById('inspectorName');
+            const fiscalName = fiscalSelect.options[fiscalSelect.selectedIndex]?.text || '';
+            const date = document.getElementById('inspectionDate').value;
+            const timeStart = document.getElementById('inspectionTimeStart').value;
+            const timeEnd = document.getElementById('inspectionTimeEnd').value;
+            
+            const sections = document.querySelectorAll('.inspection-section');
+            const trechos = [];
+            
+            sections.forEach((section) => {
+                const roadSelect = section.querySelector('.road-select');
+                const roadId = roadSelect.value;
+                const road = roads.find(r => r.id === roadId);
+                const startKm = parseFloat(section.querySelector('.start-km').value);
+                const endKm = parseFloat(section.querySelector('.end-km').value);
+                const observations = section.querySelector('.observations').value;
+                
+                if (road && !isNaN(startKm) && !isNaN(endKm)) {
+                    const startKmFormatado = startKm.toFixed(3).replace('.', ',');
+                    const endKmFormatado = endKm.toFixed(3).replace('.', ',');
+                    trechos.push({
+                        rodovia: `${road.type} ${road.number}`,
+                        startKm: startKmFormatado,
+                        endKm: endKmFormatado,
+                        observacao: observations
+                    });
+                }
+            });
+            
+            if (trechos.length === 0) {
+                return '';
+            }
+            
+            let dataFormatada = '';
+            if (date) {
+                const [ano, mes, dia] = date.split('-');
+                dataFormatada = `${dia}/${mes}/${ano}`;
+            } else {
+                dataFormatada = new Date().toLocaleDateString('pt-BR');
+            }
+            
+            let mensagem = `${dataFormatada}\n\n`;
+            mensagem += `Fiscal: ${fiscalName}\n`;
+            if (timeStart) mensagem += `Horário Entrada: ${timeStart}\n`;
+            if (timeEnd) mensagem += `Horário Saída: ${timeEnd}\n`;
+            mensagem += `\nRodovias vistoriadas\n\n`;
+            
+            trechos.forEach(trecho => {
+                mensagem += `${trecho.rodovia} - km ${trecho.startKm} ao km ${trecho.endKm}\n`;
+                if (trecho.observacao) {
+                    mensagem += `${trecho.observacao}\n`;
+                }
+                mensagem += `\n`;
+            });
+            
+            return mensagem;
+        }
+        
+        function autoFillKmFields(section) {
+            const roadSelect = section.querySelector('.road-select');
+            const roadId = roadSelect.value;
+            const startKmInput = section.querySelector('.start-km');
+            const endKmInput = section.querySelector('.end-km');
+            
+            if (roadId && startKmInput && endKmInput) {
+                const selectedRoad = roads.find(r => r.id === roadId);
+                if (selectedRoad) {
+                    startKmInput.value = selectedRoad.startKm;
+                    endKmInput.value = selectedRoad.endKm;
+                    updateSectionContractorInfo(section);
+                }
             }
         }
         
-        function showSyncSuccess() {
-            if (syncStatusEl) {
-                syncStatusEl.innerHTML = '<i class="fas fa-check-circle me-1"></i>Dados sincronizados';
-                syncStatusEl.style.color = '#28a745';
-                setTimeout(() => {
-                    if (syncStatusEl) syncStatusEl.innerHTML = '';
-                }, 2000);
-            }
-        }
-        
-        function showSyncError() {
-            if (syncStatusEl) {
-                syncStatusEl.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Erro de sincronização';
-                syncStatusEl.style.color = '#dc3545';
-            }
-        }
-        
-        // ========== LOAD DATA FROM FIREBASE ==========
         async function loadAllData() {
             showLoading();
             try {
@@ -884,233 +839,205 @@
                 
                 inspectors = inspectorsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 contractors = contractorsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                roads = roadsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                roads = sortRoads(roadsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
                 inspections = inspectionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 
-                console.log('Dados carregados:', { inspectors, contractors, roads, inspections });
+                console.log('Dados carregados - Fiscais:', inspectors.length, 'Empreiteiras:', contractors.length, 'Rodovias:', roads.length, 'Vistorias:', inspections.length);
                 
-                loadInspectorsUI();
-                loadContractorsUI();
-                loadRoadsUI();
-                loadControlData();
+                updateInspectorSelect();
+                updateRoadSelects();
+                updateContractorSelects();
+                
+                renderInspectorsTable();
+                renderContractorsTable();
+                renderRoadsTable();
+                renderControlTable();
                 
                 showSyncSuccess();
             } catch (error) {
                 console.error('Erro ao carregar dados:', error);
-                showSyncError();
-                alert('Erro ao carregar dados do Firebase. Verifique sua conexão e configuração.');
+                alert('Erro ao carregar dados do Firebase. Verifique sua conexão.');
+                if (syncStatusEl) { syncStatusEl.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Erro'; syncStatusEl.style.color = 'rgba(255,255,255,0.9)'; }
             }
         }
         
-        // ========== SAVE FUNCTIONS ==========
-        async function saveInspector(inspector) {
-            const docRef = await addDoc(collection(db, COLLECTIONS.INSPECTORS), inspector);
-            inspector.id = docRef.id;
-            return inspector;
-        }
-        
-        async function saveContractor(contractor) {
-            const docRef = await addDoc(collection(db, COLLECTIONS.CONTRACTORS), contractor);
-            contractor.id = docRef.id;
-            return contractor;
-        }
-        
-        async function saveRoad(road) {
-            const docRef = await addDoc(collection(db, COLLECTIONS.ROADS), road);
-            road.id = docRef.id;
-            return road;
-        }
-        
-        async function saveInspection(inspection) {
-            const docRef = await addDoc(collection(db, COLLECTIONS.INSPECTIONS), inspection);
-            inspection.id = docRef.id;
-            return inspection;
-        }
-        
-        async function updateContractorInFirebase(id, newName) {
-            const contractorRef = doc(db, COLLECTIONS.CONTRACTORS, id);
-            await updateDoc(contractorRef, { name: newName });
-        }
-        
-        async function deleteInspectorFromFirebase(id) {
-            await deleteDoc(doc(db, COLLECTIONS.INSPECTORS, id));
-        }
-        
-        async function deleteContractorFromFirebase(id) {
-            await deleteDoc(doc(db, COLLECTIONS.CONTRACTORS, id));
-        }
-        
-        async function deleteRoadFromFirebase(id) {
-            await deleteDoc(doc(db, COLLECTIONS.ROADS, id));
-        }
-        
-        async function deleteInspectionFromFirebase(id) {
-            await deleteDoc(doc(db, COLLECTIONS.INSPECTIONS, id));
-        }
-        
-        // ========== UI FUNCTIONS ==========
-        function formatDateBR(dateString) {
-            if (!dateString) return 'Nunca';
-            const parts = dateString.split('-');
-            if (parts.length === 3) {
-                return `${parts[2]}/${parts[1]}/${parts[0]}`;
-            }
-            return dateString;
-        }
-        
-        function getTodayDate() {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = (today.getMonth() + 1).toString().padStart(2, '0');
-            const day = today.getDate().toString().padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-        
-        function loadInspectorsUI() {
+        function updateInspectorSelect() {
             const select = document.getElementById('inspectorName');
             if (select) {
                 select.innerHTML = '<option value="" selected disabled>Selecione o fiscal</option>';
-                inspectors.forEach(i => {
-                    select.innerHTML += `<option value="${i.id}">${i.name}</option>`;
-                });
-            }
-            
-            const tbody = document.getElementById('inspectorsTable')?.getElementsByTagName('tbody')[0];
-            if (tbody) {
-                tbody.innerHTML = '';
-                inspectors.forEach(i => {
-                    const count = inspections.filter(insp => insp.inspectorId === i.id).length;
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><div class="inspector-photo bg-secondary d-flex align-items-center justify-content-center text-white"><i class="fas fa-user"></i></div></td>
-                            <td>${i.name}</td>
-                            <td>${i.registration || '-'}</td>
-                            <td>${count}</td>
-                            <td><button class="btn btn-sm btn-danger delete-inspector" data-id="${i.id}"><i class="fas fa-trash"></i></button></td>
-                        </tr>
-                    `;
-                });
+                if (inspectors.length === 0) {
+                    select.innerHTML = '<option value="" disabled>Nenhum fiscal cadastrado</option>';
+                } else {
+                    inspectors.forEach(i => { select.innerHTML += `<option value="${i.id}">${i.name}</option>`; });
+                }
             }
         }
         
-        function loadContractorsUI() {
+        function updateRoadSelects() {
+            const roadSelects = document.querySelectorAll('.road-select');
+            roadSelects.forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = '<option value="" selected disabled>Selecione a rodovia</option>';
+                roads.forEach(r => { select.innerHTML += `<option value="${r.id}">${r.type}-${r.number}</option>`; });
+                if (currentValue && roads.some(r => r.id === currentValue)) { select.value = currentValue; }
+            });
+        }
+        
+        function updateContractorSelects() {
             const roadSelect = document.getElementById('roadContractor');
             if (roadSelect) {
                 roadSelect.innerHTML = '<option value="">Nenhuma</option>';
-                contractors.forEach(c => {
-                    roadSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-                });
+                contractors.forEach(c => { roadSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`; });
             }
-            
             const sectionSelect = document.getElementById('sectionContractor');
             if (sectionSelect) {
                 sectionSelect.innerHTML = '<option value="" selected disabled>Selecione</option>';
-                contractors.forEach(c => {
-                    sectionSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-                });
+                contractors.forEach(c => { sectionSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`; });
             }
-            
-            const tbody = document.getElementById('contractorsTable')?.getElementsByTagName('tbody')[0];
-            if (tbody) {
-                tbody.innerHTML = '';
-                contractors.forEach(c => {
-                    let sectionsCount = 0;
-                    roads.forEach(r => {
-                        if (r.sections) {
-                            sectionsCount += r.sections.filter(s => s.contractorId === c.id).length;
-                        }
-                    });
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><span class="contractor-name-display" data-id="${c.id}" style="cursor:pointer;">${c.name}</span></td>
-                            <td>${sectionsCount}</td>
-                            <td>
-                                <button class="btn btn-sm btn-warning btn-edit-contractor" data-id="${c.id}"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-sm btn-danger delete-contractor" data-id="${c.id}"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            }
-            
-            document.querySelectorAll('.btn-edit-contractor').forEach(btn => {
-                btn.addEventListener('click', () => openEditContractorModal(btn.getAttribute('data-id')));
-            });
-            document.querySelectorAll('.contractor-name-display').forEach(span => {
-                span.addEventListener('click', () => openEditContractorModal(span.getAttribute('data-id')));
-            });
         }
         
-        function loadRoadsUI() {
-            const tbody = document.getElementById('roadSectionsTable')?.getElementsByTagName('tbody')[0];
-            if (tbody) {
-                tbody.innerHTML = '';
-                roads.forEach(r => {
-                    const sections = r.sections || [];
-                    const merged = mergeSections(sections);
-                    const sectionsInfo = merged.map(s => {
-                        const c = contractors.find(c => c.id === s.contractorId);
-                        return `${s.startKm} a ${s.endKm} km (${c ? c.name : 'Não informada'})`;
-                    }).join('<br>');
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${r.type}-${r.number}</td>
-                            <td>${r.startKm} a ${r.endKm} km</td>
-                            <td>${(r.endKm - r.startKm).toFixed(3)} km</td>
-                            <td>${sectionsInfo}</td>
-                            <td>
-                                <button class="btn btn-sm btn-primary manage-sections" data-id="${r.id}"><i class="fas fa-edit"></i> Gerenciar</button>
-                                <button class="btn btn-sm btn-danger delete-road" data-id="${r.id}"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            }
-            
-            const roadSelects = document.querySelectorAll('.road-select');
-            roadSelects.forEach(select => {
-                select.innerHTML = '<option value="" selected disabled>Selecione a rodovia</option>';
-                roads.forEach(r => {
-                    select.innerHTML += `<option value="${r.id}">${r.type}-${r.number}</option>`;
-                });
-            });
-        }
-        
-        function loadControlData() {
-            const showOnlyOverdue = document.getElementById('showOnlyOverdue')?.checked ?? true;
-            const searchTerm = document.getElementById('searchRoad')?.value.toLowerCase().trim() || '';
-            const tbody = document.getElementById('controlTable')?.getElementsByTagName('tbody')[0];
+        function renderInspectorsTable() {
+            const tbody = document.getElementById('inspectorsTableBody');
             if (!tbody) return;
+            tbody.innerHTML = '';
+            
+            if (inspectors.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Nenhum fiscal cadastrado</td>';
+                return;
+            }
+            
+            for (const i of inspectors) {
+                const count = inspections.filter(insp => insp.inspectorId === i.id).length;
+                const row = tbody.insertRow();
+                row.insertCell(0).innerHTML = '<div class="inspector-photo bg-secondary d-flex align-items-center justify-content-center text-white"><i class="fas fa-user"></i></div>';
+                row.insertCell(1).innerHTML = i.name;
+                row.insertCell(2).innerHTML = i.registration || '-';
+                row.insertCell(3).innerHTML = count;
+                row.insertCell(4).innerHTML = `<button class="btn btn-sm btn-danger delete-inspector" data-id="${i.id}"><i class="fas fa-trash"></i></button>`;
+            }
+        }
+        
+        function renderContractorsTable() {
+            const tbody = document.getElementById('contractorsTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            
+            if (contractors.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center">Nenhuma empreiteira cadastrada</td>';
+                return;
+            }
+            
+            for (const c of contractors) {
+                let sectionsCount = 0;
+                for (const r of roads) {
+                    if (r.sections) {
+                        sectionsCount += r.sections.filter(s => s.contractorId === c.id).length;
+                    }
+                }
+                const row = tbody.insertRow();
+                row.insertCell(0).innerHTML = `<span class="contractor-name-display" data-id="${c.id}" style="cursor:pointer;">${c.name}</span>`;
+                row.insertCell(1).innerHTML = sectionsCount;
+                row.insertCell(2).innerHTML = `
+                    <button class="btn btn-sm btn-warning btn-edit-contractor" data-id="${c.id}"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger delete-contractor" data-id="${c.id}"><i class="fas fa-trash"></i></button>
+                `;
+            }
+        }
+        
+        function renderRoadsTable() {
+            const tbody = document.getElementById('roadSectionsTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            
+            if (roads.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">Nenhuma rodovia cadastrada</td>';
+                return;
+            }
+            
+            for (const r of roads) {
+                const sections = r.sections || [];
+                const merged = mergeSections(sections);
+                const sectionsInfo = merged.map(s => {
+                    const c = contractors.find(c => c.id === s.contractorId);
+                    return `${s.startKm} a ${s.endKm} km (${c ? c.name : 'Não informada'})`;
+                }).join('<br>');
+                const row = tbody.insertRow();
+                row.insertCell(0).innerHTML = `<strong>${r.type}-${r.number}</strong>`;
+                row.insertCell(1).innerHTML = `${r.startKm} a ${r.endKm} km (${(r.endKm - r.startKm).toFixed(3)} km)`;
+                row.insertCell(2).innerHTML = sectionsInfo || 'Nenhum trecho cadastrado';
+                row.insertCell(3).innerHTML = `
+                    <button class="btn btn-sm btn-primary manage-sections" data-id="${r.id}"><i class="fas fa-edit"></i> Trechos</button>
+                    <button class="btn btn-sm btn-danger delete-road" data-id="${r.id}"><i class="fas fa-trash"></i></button>
+                `;
+            }
+        }
+        
+        function calcularDiasSemVistoria(dataVistoria) {
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            
+            const dataVistoriaObj = new Date(dataVistoria);
+            dataVistoriaObj.setHours(0, 0, 0, 0);
+            
+            if (dataVistoriaObj.getTime() === hoje.getTime()) {
+                return 0;
+            }
+            
+            const diffTime = hoje.getTime() - dataVistoriaObj.getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            return diffDays;
+        }
+        
+        function renderControlTable() {
+            const tbody = document.getElementById('controlTableBody');
+            if (!tbody) return;
+            
+            const searchTerm = document.getElementById('searchRoad')?.value.toLowerCase().trim() || '';
+            const dateFilterValue = document.getElementById('dateFilter')?.value || 'all';
             
             tbody.innerHTML = '';
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             
-            roads.forEach(road => {
+            let limitDate = null;
+            if (dateFilterValue !== 'all') {
+                const days = parseInt(dateFilterValue);
+                limitDate = new Date(today);
+                limitDate.setDate(today.getDate() - days);
+            }
+            
+            if (roads.length === 0) {
+                tbody.innerHTML = '<td><td colspan="5" class="text-center">Nenhuma rodovia cadastrada</td>';
+                return;
+            }
+            
+            for (const road of roads) {
                 const roadName = `${road.type}-${road.number}`;
-                if (searchTerm && !roadName.toLowerCase().includes(searchTerm)) return;
+                if (searchTerm && !roadName.toLowerCase().includes(searchTerm)) continue;
                 
                 const roadInspections = inspections.filter(i => i.roadId === road.id);
-                
-                if (roadInspections.length === 0) {
-                    if (showOnlyOverdue) return;
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><strong>${roadName}</strong></td>
-                            <td>Nunca</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>Nunca</td>
-                        </tr>
-                    `;
-                    return;
+                let filteredInspections = roadInspections;
+                if (limitDate) {
+                    filteredInspections = roadInspections.filter(i => new Date(i.date) >= limitDate);
                 }
                 
-                const latestDate = roadInspections.reduce((latest, current) => {
+                if (filteredInspections.length === 0) {
+                    const row = tbody.insertRow();
+                    row.insertCell(0).innerHTML = `<strong>${roadName}</strong>`;
+                    row.insertCell(1).innerHTML = 'Nunca';
+                    row.insertCell(2).innerHTML = '-';
+                    row.insertCell(3).innerHTML = '-';
+                    row.insertCell(4).innerHTML = 'Nunca';
+                    continue;
+                }
+                
+                const latestDate = filteredInspections.reduce((latest, current) => {
                     return new Date(current.date) > new Date(latest.date) ? current : latest;
                 }).date;
                 
-                const latestInspections = roadInspections.filter(i => i.date === latestDate);
+                const latestInspections = filteredInspections.filter(i => i.date === latestDate);
+                
                 const uniqueInspectorIds = [...new Set(latestInspections.map(i => i.inspectorId))];
                 const inspectorsList = uniqueInspectorIds.map(id => {
                     const inspector = inspectors.find(i => i.id === id);
@@ -1124,121 +1051,34 @@
                     inspectorsDisplay = `<div class="inspector-group">${inspectorsList.map(name => `<span class="inspector-badge"><i class="fas fa-user-check me-1"></i>${name}</span>`).join('')}</div>`;
                 }
                 
-                const lastSections = latestInspections.map(i => `${i.startKm.toFixed(3)} a ${i.endKm.toFixed(3)} km`).join(', ');
-                const lastDate = new Date(latestDate);
-                lastDate.setHours(0, 0, 0, 0);
-                const daysSinceLast = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-                
-                if (showOnlyOverdue && daysSinceLast <= 20) return;
-                
-                tbody.innerHTML += `
-                    <tr>
-                        <td><strong>${roadName}</strong></td>
-                        <td>${formatDateBR(latestDate)}</td>
-                        <td>${inspectorsDisplay}</td>
-                        <td><span class="last-inspected-section">${lastSections}</span></td>
-                        <td>${daysSinceLast}</td>
-                    </tr>
-                `;
-            });
-        }
-        
-        function addInspectionSection() {
-            const container = document.getElementById('sectionsContainer');
-            const newSection = document.createElement('div');
-            newSection.className = 'inspection-section';
-            newSection.setAttribute('data-section-index', sectionCounter);
-            newSection.innerHTML = `
-                <button type="button" class="btn btn-sm btn-danger remove-section">
-                    <i class="fas fa-times"></i>
-                </button>
-                <div class="row">
-                    <div class="col-12 col-md-6 mb-3 mb-md-0">
-                        <label class="form-label">Rodovia</label>
-                        <select class="form-select road-select" name="roadId" required>
-                            <option value="" selected disabled>Selecione a rodovia</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <label class="form-label">Empreiteira Responsável</label>
-                        <div class="form-control bg-light contractor-info" style="min-height: 42px;"></div>
-                    </div>
-                </div>
-                <div class="row mt-2">
-                    <div class="col-6">
-                        <label class="form-label">KM Inicial</label>
-                        <input type="number" step="0.001" class="form-control start-km" required>
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label">KM Final</label>
-                        <input type="number" step="0.001" class="form-control end-km" required>
-                    </div>
-                </div>
-                <div class="row mt-2">
-                    <div class="col-12">
-                        <label class="form-label">Observações (opcional)</label>
-                        <textarea class="form-control observations" rows="2"></textarea>
-                    </div>
-                </div>
-            `;
-            
-            const roadSelect = newSection.querySelector('.road-select');
-            roads.forEach(road => {
-                roadSelect.innerHTML += `<option value="${road.id}">${road.type}-${road.number}</option>`;
-            });
-            
-            roadSelect.addEventListener('change', () => updateSectionContractorInfo(newSection));
-            newSection.querySelector('.start-km').addEventListener('change', () => updateSectionContractorInfo(newSection));
-            newSection.querySelector('.end-km').addEventListener('change', () => updateSectionContractorInfo(newSection));
-            newSection.querySelector('.remove-section').addEventListener('click', () => newSection.remove());
-            
-            container.appendChild(newSection);
-            sectionCounter++;
-            updateRemoveButtons();
-        }
-        
-        function updateRemoveButtons() {
-            const sections = document.querySelectorAll('.inspection-section');
-            sections.forEach((section, idx) => {
-                const removeBtn = section.querySelector('.remove-section');
-                if (removeBtn) {
-                    removeBtn.style.display = sections.length > 1 ? 'block' : 'none';
+                const trechosSet = new Set();
+                for (const inspection of latestInspections) {
+                    const trechoStr = `${inspection.startKm.toFixed(3)} a ${inspection.endKm.toFixed(3)} km`;
+                    trechosSet.add(trechoStr);
                 }
-            });
+                const lastSections = Array.from(trechosSet).join(', ');
+                
+                const daysSinceLast = calcularDiasSemVistoria(latestDate);
+                
+                const row = tbody.insertRow();
+                row.insertCell(0).innerHTML = `<strong>${roadName}</strong>`;
+                row.insertCell(1).innerHTML = formatDateBR(latestDate);
+                row.insertCell(2).innerHTML = inspectorsDisplay;
+                row.insertCell(3).innerHTML = `<span class="last-inspected-section">${lastSections}</span>`;
+                row.insertCell(4).innerHTML = daysSinceLast;
+            }
         }
         
-        function updateSectionContractorInfo(section) {
-            const roadId = section.querySelector('.road-select').value;
-            const startKm = parseFloat(section.querySelector('.start-km').value);
-            const endKm = parseFloat(section.querySelector('.end-km').value);
-            const contractorInfoDiv = section.querySelector('.contractor-info');
-            
-            if (!roadId || isNaN(startKm) || isNaN(endKm)) {
-                contractorInfoDiv.innerHTML = '<span class="text-muted">Selecione a rodovia e o trecho</span>';
-                return;
-            }
-            
-            const road = roads.find(r => r.id === roadId);
-            if (!road) return;
-            
-            const overlappingSections = (road.sections || []).filter(s => 
-                (s.startKm <= startKm && s.endKm > startKm) ||
-                (s.startKm < endKm && s.endKm >= endKm) ||
-                (startKm <= s.startKm && endKm >= s.endKm)
-            );
-            
-            const uniqueIds = [...new Set(overlappingSections.map(s => s.contractorId))];
-            if (uniqueIds.length === 0 && road.defaultContractorId) uniqueIds.push(road.defaultContractorId);
-            
-            const names = uniqueIds.map(id => contractors.find(c => c.id === id)?.name).filter(n => n);
-            
-            if (names.length === 0) {
-                contractorInfoDiv.innerHTML = '<span class="text-danger">Nenhuma empreiteira responsável</span>';
-            } else if (names.length === 1) {
-                contractorInfoDiv.innerHTML = names[0];
-            } else {
-                contractorInfoDiv.innerHTML = `<span class="multiple-contractors">${names.join(' / ')}</span>`;
-            }
+        function formatDateBR(dateString) {
+            if (!dateString) return 'Nunca';
+            const parts = dateString.split('-');
+            if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            return dateString;
+        }
+        
+        function getTodayDate() {
+            const today = new Date();
+            return `${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getDate().toString().padStart(2,'0')}`;
         }
         
         function mergeSections(sections) {
@@ -1257,139 +1097,245 @@
             return merged;
         }
         
-        // ========== EVENT HANDLERS ==========
-        async function handleInspectionSubmit(e) {
-            e.preventDefault();
-            
-            const inspectorId = document.getElementById('inspectorName').value;
-            const date = document.getElementById('inspectionDate').value;
-            
-            if (!inspectorId || !date) {
-                alert('Selecione o fiscal e a data da vistoria');
+        function updateSectionContractorInfo(section) {
+            const roadId = section.querySelector('.road-select').value;
+            const startKm = parseFloat(section.querySelector('.start-km').value);
+            const endKm = parseFloat(section.querySelector('.end-km').value);
+            const contractorInfoDiv = section.querySelector('.contractor-info');
+            if (!roadId || isNaN(startKm) || isNaN(endKm)) {
+                contractorInfoDiv.innerHTML = '<span class="text-muted">Selecione a rodovia e o trecho</span>';
                 return;
             }
+            const road = roads.find(r => r.id === roadId);
+            if (!road) return;
+            const overlappingSections = (road.sections || []).filter(s => 
+                (s.startKm <= startKm && s.endKm > startKm) ||
+                (s.startKm < endKm && s.endKm >= endKm) ||
+                (startKm <= s.startKm && endKm >= s.endKm));
+            const uniqueIds = [...new Set(overlappingSections.map(s => s.contractorId))];
+            if (uniqueIds.length === 0 && road.defaultContractorId) uniqueIds.push(road.defaultContractorId);
+            const names = uniqueIds.map(id => contractors.find(c => c.id === id)?.name).filter(n => n);
+            if (names.length === 0) contractorInfoDiv.innerHTML = '<span class="text-danger">Nenhuma empreiteira responsável</span>';
+            else if (names.length === 1) contractorInfoDiv.innerHTML = names[0];
+            else contractorInfoDiv.innerHTML = `<span class="multiple-contractors">${names.join(' / ')}</span>`;
+        }
+        
+        function addInspectionSection() {
+            const container = document.getElementById('sectionsContainer');
+            const newSection = document.createElement('div');
+            newSection.className = 'inspection-section';
+            newSection.innerHTML = `
+                <button type="button" class="btn btn-sm btn-danger remove-section"><i class="fas fa-times"></i></button>
+                <div class="row">
+                    <div class="col-12 col-md-6 mb-3 mb-md-0"><label class="form-label">Rodovia</label><select class="form-select road-select" required><option value="" selected disabled>Selecione a rodovia</option></select></div>
+                    <div class="col-12 col-md-6"><label class="form-label">Empreiteira Responsável</label><div class="form-control bg-light contractor-info" style="min-height: 42px;"></div></div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-6"><label class="form-label">KM Inicial</label><input type="number" step="0.001" class="form-control start-km" required><div class="auto-fill-hint"><i class="fas fa-magic me-1"></i>Preenchido automaticamente</div></div>
+                    <div class="col-6"><label class="form-label">KM Final</label><input type="number" step="0.001" class="form-control end-km" required><div class="auto-fill-hint"><i class="fas fa-magic me-1"></i>Preenchido automaticamente</div></div>
+                </div>
+                <div class="row mt-3"><div class="col-12"><label class="form-label">Observações</label><textarea class="form-control observations" rows="2" placeholder="Observações adicionais sobre a vistoria..."></textarea></div></div>
+            `;
+            
+            const roadSelect = newSection.querySelector('.road-select');
+            roads.forEach(road => { roadSelect.innerHTML += `<option value="${road.id}">${road.type}-${road.number}</option>`; });
+            
+            roadSelect.addEventListener('change', () => autoFillKmFields(newSection));
+            newSection.querySelector('.start-km').addEventListener('change', () => updateSectionContractorInfo(newSection));
+            newSection.querySelector('.end-km').addEventListener('change', () => updateSectionContractorInfo(newSection));
+            newSection.querySelector('.remove-section').addEventListener('click', () => newSection.remove());
+            
+            container.appendChild(newSection);
+            sectionCounter++;
+            const sections = document.querySelectorAll('.inspection-section');
+            sections.forEach((s) => { 
+                const btn = s.querySelector('.remove-section'); 
+                if (btn) btn.style.display = sections.length > 1 ? 'block' : 'none'; 
+            });
+            
+            adicionarEventosWhatsApp();
+        }
+        
+        function adicionarEventosWhatsApp() {
+            const inputs = document.querySelectorAll('#inspectionForm input, #inspectionForm select, #inspectionForm textarea');
+            inputs.forEach(input => {
+                input.removeEventListener('change', atualizarMensagemWhatsApp);
+                input.addEventListener('change', atualizarMensagemWhatsApp);
+            });
             
             const sections = document.querySelectorAll('.inspection-section');
-            let savedCount = 0;
-            let errors = [];
+            sections.forEach(section => {
+                const selects = section.querySelectorAll('.road-select, .start-km, .end-km, .observations');
+                selects.forEach(select => {
+                    select.removeEventListener('change', atualizarMensagemWhatsApp);
+                    select.addEventListener('change', atualizarMensagemWhatsApp);
+                });
+            });
+        }
+        
+        function atualizarMensagemWhatsApp() {
+            const mensagem = gerarMensagemWhatsApp();
+            const messageArea = document.getElementById('whatsappMessageArea');
+            const messageDiv = document.getElementById('whatsappMessage');
             
+            if (mensagem) {
+                messageDiv.textContent = mensagem;
+                messageArea.style.display = 'block';
+            } else {
+                messageArea.style.display = 'none';
+            }
+        }
+        
+        function exportToExcel() {
+            const data = [['Rodovia', 'Data da Última Vistoria', 'Fiscais', 'Último Trecho Vistoriado', 'Dias Sem Vistoria']];
+            const rows = document.querySelectorAll('#controlTableBody tr');
+            for (const row of rows) {
+                const cols = row.querySelectorAll('td');
+                if (cols.length === 5 && !cols[0].innerText.includes('Nenhuma') && !cols[0].innerText.includes('encontrada')) {
+                    data.push([cols[0].innerText, cols[1].innerText, cols[2].innerText, cols[3].innerText, cols[4].innerText]);
+                }
+            }
+            if (data.length <= 1) { alert('Não há dados para exportar'); return; }
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Controle_Vistorias');
+            XLSX.writeFile(wb, `controle_vistorias_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+        
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape' });
+            doc.setFontSize(18);
+            doc.text('Relatório de Controle de Vistorias', 14, 15);
+            doc.setFontSize(10);
+            doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 22);
+            const headers = [['Rodovia', 'Data da Última Vistoria', 'Fiscais', 'Último Trecho', 'Dias Sem Vistoria']];
+            const body = [];
+            const rows = document.querySelectorAll('#controlTableBody tr');
+            for (const row of rows) {
+                const cols = row.querySelectorAll('td');
+                if (cols.length === 5 && !cols[0].innerText.includes('Nenhuma') && !cols[0].innerText.includes('encontrada')) {
+                    body.push([cols[0].innerText, cols[1].innerText, cols[2].innerText, cols[3].innerText, cols[4].innerText]);
+                }
+            }
+            if (body.length === 0) { alert('Não há dados para exportar'); return; }
+            doc.autoTable({ head: headers, body: body, startY: 28, theme: 'grid', headStyles: { fillColor: [13, 110, 253], textColor: 255, fontStyle: 'bold' }, styles: { fontSize: 8, cellPadding: 2 }, columnStyles: { 0: { cellWidth: 35 }, 1: { cellWidth: 30 }, 2: { cellWidth: 45 }, 3: { cellWidth: 50 }, 4: { cellWidth: 25 } } });
+            doc.save(`controle_vistorias_${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+        
+        function loadRoadSectionsModal(roadId) {
+            const road = roads.find(r => r.id === roadId);
+            if (!road) return;
+            const tbody = document.getElementById('roadSectionsModalTableBody');
+            tbody.innerHTML = '';
+            const sections = road.sections || [];
+            if (sections.length === 0) { 
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">Nenhum trecho cadastrado</tbody>'; 
+                return; 
+            }
+            const sortedSections = [...sections].sort((a, b) => a.startKm - b.startKm);
+            for (let idx = 0; idx < sortedSections.length; idx++) {
+                const s = sortedSections[idx];
+                const c = contractors.find(c => c.id === s.contractorId);
+                const row = tbody.insertRow();
+                row.insertCell(0).innerHTML = s.startKm;
+                row.insertCell(1).innerHTML = s.endKm;
+                row.insertCell(2).innerHTML = c ? c.name : 'Não informada';
+                row.insertCell(3).innerHTML = `<button class="btn btn-sm btn-danger delete-section" data-id="${idx}" data-road-id="${roadId}"><i class="fas fa-trash"></i></button>`;
+            }
+        }
+        
+        async function saveInspector(inspector) { const docRef = await addDoc(collection(db, COLLECTIONS.INSPECTORS), inspector); inspector.id = docRef.id; return inspector; }
+        async function saveContractor(contractor) { const docRef = await addDoc(collection(db, COLLECTIONS.CONTRACTORS), contractor); contractor.id = docRef.id; return contractor; }
+        async function saveRoad(road) { const docRef = await addDoc(collection(db, COLLECTIONS.ROADS), road); road.id = docRef.id; return road; }
+        async function saveInspection(inspection) { const docRef = await addDoc(collection(db, COLLECTIONS.INSPECTIONS), inspection); inspection.id = docRef.id; return inspection; }
+        async function updateContractorInFirebase(id, newName) { await updateDoc(doc(db, COLLECTIONS.CONTRACTORS, id), { name: newName }); }
+        async function deleteInspectorFromFirebase(id) { await deleteDoc(doc(db, COLLECTIONS.INSPECTORS, id)); }
+        async function deleteContractorFromFirebase(id) { await deleteDoc(doc(db, COLLECTIONS.CONTRACTORS, id)); }
+        async function deleteRoadFromFirebase(id) { await deleteDoc(doc(db, COLLECTIONS.ROADS, id)); }
+        async function deleteInspectionFromFirebase(id) { await deleteDoc(doc(db, COLLECTIONS.INSPECTIONS, id)); }
+        
+        async function handleInspectionSubmit(e) {
+            e.preventDefault();
+            const inspectorId = document.getElementById('inspectorName').value;
+            const date = document.getElementById('inspectionDate').value;
+            if (!inspectorId || !date) { 
+                showProgressNotification('Selecione o fiscal e a data da vistoria', 3);
+                return; 
+            }
+            const sections = document.querySelectorAll('.inspection-section');
+            let savedCount = 0, errors = [];
             for (let idx = 0; idx < sections.length; idx++) {
                 const section = sections[idx];
                 const roadId = section.querySelector('.road-select').value;
                 const startKm = parseFloat(section.querySelector('.start-km').value);
                 const endKm = parseFloat(section.querySelector('.end-km').value);
                 const observations = section.querySelector('.observations').value;
-                
-                if (!roadId) {
-                    errors.push(`Trecho ${idx+1}: Selecione uma rodovia`);
-                    continue;
-                }
-                if (isNaN(startKm)) {
-                    errors.push(`Trecho ${idx+1}: Informe o KM inicial`);
-                    continue;
-                }
-                if (isNaN(endKm)) {
-                    errors.push(`Trecho ${idx+1}: Informe o KM final`);
-                    continue;
-                }
-                if (endKm <= startKm) {
-                    errors.push(`Trecho ${idx+1}: KM final deve ser maior que KM inicial`);
-                    continue;
-                }
-                
+                if (!roadId) { errors.push(`Trecho ${idx+1}: Selecione uma rodovia`); continue; }
+                if (isNaN(startKm)) { errors.push(`Trecho ${idx+1}: Informe o KM inicial`); continue; }
+                if (isNaN(endKm)) { errors.push(`Trecho ${idx+1}: Informe o KM final`); continue; }
+                if (endKm <= startKm) { errors.push(`Trecho ${idx+1}: KM final deve ser maior que KM inicial`); continue; }
                 const road = roads.find(r => r.id === roadId);
-                let contractorId = null;
-                let contractorsList = [];
-                
+                let contractorId = null, contractorsList = [];
                 if (road) {
-                    const overlappingSections = (road.sections || []).filter(s => 
-                        (s.startKm <= startKm && s.endKm > startKm) ||
-                        (s.startKm < endKm && s.endKm >= endKm) ||
-                        (startKm <= s.startKm && endKm >= s.endKm)
-                    );
+                    const overlappingSections = (road.sections || []).filter(s => (s.startKm <= startKm && s.endKm > startKm) || (s.startKm < endKm && s.endKm >= endKm) || (startKm <= s.startKm && endKm >= s.endKm));
                     const uniqueIds = [...new Set(overlappingSections.map(s => s.contractorId))];
-                    if (uniqueIds.length === 1) {
-                        contractorId = uniqueIds[0];
-                    } else if (uniqueIds.length > 1) {
-                        contractorId = uniqueIds[0];
-                        contractorsList = uniqueIds.map(id => contractors.find(c => c.id === id)?.name).filter(n => n);
-                    } else if (road.defaultContractorId) {
-                        contractorId = road.defaultContractorId;
-                    }
+                    if (uniqueIds.length === 1) contractorId = uniqueIds[0];
+                    else if (uniqueIds.length > 1) { contractorId = uniqueIds[0]; contractorsList = uniqueIds.map(id => contractors.find(c => c.id === id)?.name).filter(n => n); }
+                    else if (road.defaultContractorId) contractorId = road.defaultContractorId;
                 }
-                
-                const newInspection = {
-                    inspectorId,
-                    date,
-                    roadId,
-                    startKm,
-                    endKm,
-                    contractorId,
-                    contractorsList,
-                    observations,
-                    createdAt: new Date().toISOString()
-                };
-                
+                const newInspection = { inspectorId, date, roadId, startKm, endKm, contractorId, contractorsList, observations, createdAt: new Date().toISOString() };
                 await saveInspection(newInspection);
                 inspections.push({ id: newInspection.id, ...newInspection });
                 savedCount++;
             }
-            
-            if (errors.length > 0) {
-                alert(errors.join('\n'));
-                return;
+            if (errors.length > 0) { 
+                alert(errors.join('\n')); 
+                return; 
             }
-            
             if (savedCount > 0) {
-                loadControlData();
+                renderControlTable();
+                
+                const mensagem = gerarMensagemWhatsApp();
+                if (mensagem) {
+                    await navigator.clipboard.writeText(mensagem);
+                    showProgressNotification('Mensagem copiada com sucesso! Agora é só colar no WhatsApp e enviar.', 15);
+                    
+                    const messageDiv = document.getElementById('whatsappMessage');
+                    const messageArea = document.getElementById('whatsappMessageArea');
+                    if (messageDiv && messageArea) {
+                        messageDiv.textContent = mensagem;
+                        messageArea.style.display = 'block';
+                    }
+                } else {
+                    showProgressNotification(`${savedCount} vistoria(s) registrada(s) com sucesso!`, 15);
+                }
                 
                 document.getElementById('sectionsContainer').innerHTML = `
                     <div class="inspection-section" data-section-index="0">
-                        <button type="button" class="btn btn-sm btn-danger remove-section" style="display: none;">
-                            <i class="fas fa-times"></i>
-                        </button>
+                        <button type="button" class="btn btn-sm btn-danger remove-section" style="display: none;"><i class="fas fa-times"></i></button>
                         <div class="row">
-                            <div class="col-12 col-md-6 mb-3 mb-md-0">
-                                <label class="form-label">Rodovia</label>
-                                <select class="form-select road-select" name="roadId" required>
-                                    <option value="" selected disabled>Selecione a rodovia</option>
-                                </select>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label">Empreiteira Responsável</label>
-                                <div class="form-control bg-light contractor-info" style="min-height: 42px;"></div>
-                            </div>
+                            <div class="col-12 col-md-6 mb-3 mb-md-0"><label class="form-label">Rodovia</label><select class="form-select road-select" name="roadId" required><option value="" selected disabled>Selecione a rodovia</option></select></div>
+                            <div class="col-12 col-md-6"><label class="form-label">Empreiteira Responsável</label><div class="form-control bg-light contractor-info" style="min-height: 42px;"></div></div>
                         </div>
-                        <div class="row mt-2">
-                            <div class="col-6">
-                                <label class="form-label">KM Inicial</label>
-                                <input type="number" step="0.001" class="form-control start-km" required>
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label">KM Final</label>
-                                <input type="number" step="0.001" class="form-control end-km" required>
-                            </div>
+                        <div class="row mt-3">
+                            <div class="col-6"><label class="form-label">KM Inicial</label><input type="number" step="0.001" class="form-control start-km" required><div class="auto-fill-hint"><i class="fas fa-magic me-1"></i>Preenchido automaticamente</div></div>
+                            <div class="col-6"><label class="form-label">KM Final</label><input type="number" step="0.001" class="form-control end-km" required><div class="auto-fill-hint"><i class="fas fa-magic me-1"></i>Preenchido automaticamente</div></div>
                         </div>
-                        <div class="row mt-2">
-                            <div class="col-12">
-                                <label class="form-label">Observações (opcional)</label>
-                                <textarea class="form-control observations" rows="2"></textarea>
-                            </div>
-                        </div>
+                        <div class="row mt-3"><div class="col-12"><label class="form-label">Observações</label><textarea class="form-control observations" rows="2" placeholder="Observações adicionais sobre a vistoria..."></textarea></div></div>
                     </div>
                 `;
                 const firstSection = document.querySelector('.inspection-section');
-                roads.forEach(road => {
-                    firstSection.querySelector('.road-select').innerHTML += `<option value="${road.id}">${road.type}-${road.number}</option>`;
-                });
-                firstSection.querySelector('.road-select').addEventListener('change', () => updateSectionContractorInfo(firstSection));
+                roads.forEach(road => { firstSection.querySelector('.road-select').innerHTML += `<option value="${road.id}">${road.type}-${road.number}</option>`; });
+                firstSection.querySelector('.road-select').addEventListener('change', () => autoFillKmFields(firstSection));
                 firstSection.querySelector('.start-km').addEventListener('change', () => updateSectionContractorInfo(firstSection));
                 firstSection.querySelector('.end-km').addEventListener('change', () => updateSectionContractorInfo(firstSection));
                 document.getElementById('inspectionDate').value = getTodayDate();
+                document.getElementById('inspectionTimeStart').value = '08:30';
+                document.getElementById('inspectionTimeEnd').value = '17:30';
                 sectionCounter = 1;
-                alert(`${savedCount} vistoria(s) registrada(s) com sucesso!`);
-            } else {
-                alert('Nenhum trecho válido para registrar');
+            } else { 
+                showProgressNotification('Nenhum trecho válido para registrar', 3);
             }
         }
         
@@ -1401,70 +1347,45 @@
             const endKm = parseFloat(document.getElementById('roadEndKm').value);
             const defaultContractorId = document.getElementById('roadContractor').value || null;
             const description = document.getElementById('roadDescription').value;
-            
-            if (endKm <= startKm) {
-                alert('KM final deve ser maior que KM inicial');
-                return;
-            }
-            
-            const newRoad = {
-                type,
-                number,
-                startKm,
-                endKm,
-                defaultContractorId,
-                description,
-                sections: defaultContractorId ? [{ startKm, endKm, contractorId: defaultContractorId }] : [],
-                createdAt: new Date().toISOString()
-            };
-            
+            if (endKm <= startKm) { alert('KM final deve ser maior que KM inicial'); return; }
+            const newRoad = { type, number, startKm, endKm, defaultContractorId, description, sections: defaultContractorId ? [{ startKm, endKm, contractorId: defaultContractorId }] : [], createdAt: new Date().toISOString() };
             await saveRoad(newRoad);
-            roads.push({ id: newRoad.id, ...newRoad });
-            loadRoadsUI();
-            loadControlData();
+            roads = sortRoads([...roads, newRoad]);
+            updateRoadSelects();
+            renderRoadsTable();
+            renderControlTable();
             document.getElementById('roadForm').reset();
-            alert('Rodovia cadastrada!');
+            alert('Rodovia cadastrada com sucesso!');
         }
         
         async function handleContractorSubmit(e) {
             e.preventDefault();
             const name = document.getElementById('contractorName').value.trim();
-            if (!name) {
-                alert('Informe o nome');
-                return;
-            }
-            if (contractors.some(c => c.name.toLowerCase() === name.toLowerCase())) {
-                alert('Já existe');
-                return;
-            }
-            
+            if (!name) { alert('Informe o nome da empreiteira'); return; }
+            if (contractors.some(c => c.name.toLowerCase() === name.toLowerCase())) { alert('Já existe uma empreiteira com este nome'); return; }
             const newContractor = { name, createdAt: new Date().toISOString() };
             await saveContractor(newContractor);
             contractors.push({ id: newContractor.id, ...newContractor });
-            loadContractorsUI();
+            updateContractorSelects();
+            renderContractorsTable();
+            renderRoadsTable();
             document.getElementById('contractorForm').reset();
-            alert('Empreiteira cadastrada!');
+            alert('Empreiteira cadastrada com sucesso!');
         }
         
         async function handleInspectorSubmit(e) {
             e.preventDefault();
             const name = document.getElementById('inspectorFullName').value.trim();
             const registration = document.getElementById('inspectorRegistration').value.trim();
-            if (!name || !registration) {
-                alert('Preencha todos os campos');
-                return;
-            }
-            if (inspectors.some(i => i.registration?.toLowerCase() === registration.toLowerCase())) {
-                alert('Matrícula já cadastrada');
-                return;
-            }
-            
+            if (!name || !registration) { alert('Preencha todos os campos'); return; }
+            if (inspectors.some(i => i.registration?.toLowerCase() === registration.toLowerCase())) { alert('Matrícula já cadastrada'); return; }
             const newInspector = { name, registration, createdAt: new Date().toISOString() };
             await saveInspector(newInspector);
             inspectors.push({ id: newInspector.id, ...newInspector });
-            loadInspectorsUI();
+            updateInspectorSelect();
+            renderInspectorsTable();
             document.getElementById('inspectorForm').reset();
-            alert('Fiscal cadastrado!');
+            alert('Fiscal cadastrado com sucesso!');
         }
         
         async function handleSectionSubmit(e) {
@@ -1473,195 +1394,120 @@
             const startKm = parseFloat(document.getElementById('sectionStartKm').value);
             const endKm = parseFloat(document.getElementById('sectionEndKm').value);
             const contractorId = document.getElementById('sectionContractor').value;
-            
             const road = roads.find(r => r.id === roadId);
             if (!road) return;
-            
-            if (endKm <= startKm) {
-                alert('KM final deve ser maior');
-                return;
-            }
-            if (startKm < road.startKm || endKm > road.endKm) {
-                alert('Trecho fora dos limites');
-                return;
-            }
-            
-            const overlapping = (road.sections || []).some(s => 
-                (startKm >= s.startKm && startKm < s.endKm) || 
-                (endKm > s.startKm && endKm <= s.endKm)
-            );
-            if (overlapping) {
-                alert('Trecho sobrepõe outro');
-                return;
-            }
-            
+            if (endKm <= startKm) { alert('KM final deve ser maior que KM inicial'); return; }
+            if (startKm < road.startKm || endKm > road.endKm) { alert('Trecho fora dos limites da rodovia'); return; }
+            if ((road.sections || []).some(s => (startKm >= s.startKm && startKm < s.endKm) || (endKm > s.startKm && endKm <= s.endKm))) { alert('Trecho sobrepõe outro já cadastrado'); return; }
             const newSection = { startKm, endKm, contractorId };
             const updatedSections = [...(road.sections || []), newSection];
-            
-            const roadRef = doc(db, COLLECTIONS.ROADS, roadId);
-            await updateDoc(roadRef, { sections: updatedSections });
-            
+            await updateDoc(doc(db, COLLECTIONS.ROADS, roadId), { sections: updatedSections });
             road.sections = updatedSections;
             loadRoadSectionsModal(roadId);
-            loadRoadsUI();
-            loadControlData();
-            
+            renderRoadsTable();
+            renderControlTable();
             document.getElementById('sectionStartKm').value = '';
             document.getElementById('sectionEndKm').value = '';
-            alert('Trecho adicionado!');
+            alert('Trecho adicionado com sucesso!');
         }
         
         async function handleDelete(element, type, id, roadId = null) {
             const confirmMessage = document.getElementById('confirmMessage');
             confirmMessage.innerHTML = `<p>Tem certeza que deseja excluir este ${type}?</p><p class="text-danger">Ação irreversível!</p>`;
-            
             const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
             const confirmAction = document.getElementById('confirmAction');
-            
             const action = async () => {
                 try {
-                    if (type === 'inspection') {
-                        await deleteInspectionFromFirebase(id);
-                        inspections = inspections.filter(i => i.id !== id);
-                        loadControlData();
-                    } else if (type === 'contractor') {
-                        const isUsed = roads.some(r => 
-                            (r.sections?.some(s => s.contractorId === id)) || 
-                            r.defaultContractorId === id
-                        );
-                        if (isUsed) {
-                            alert('Empreiteira associada a trechos');
-                            modal.hide();
-                            return;
-                        }
-                        await deleteContractorFromFirebase(id);
-                        contractors = contractors.filter(c => c.id !== id);
-                        loadContractorsUI();
-                        loadRoadsUI();
-                        loadControlData();
-                    } else if (type === 'road') {
-                        if (inspections.some(i => i.roadId === id)) {
-                            alert('Rodovia possui vistorias');
-                            modal.hide();
-                            return;
-                        }
-                        await deleteRoadFromFirebase(id);
-                        roads = roads.filter(r => r.id !== id);
-                        loadRoadsUI();
-                        loadControlData();
-                    } else if (type === 'inspector') {
-                        if (inspections.some(i => i.inspectorId === id)) {
-                            alert('Fiscal possui vistorias');
-                            modal.hide();
-                            return;
-                        }
-                        await deleteInspectorFromFirebase(id);
-                        inspectors = inspectors.filter(i => i.id !== id);
-                        loadInspectorsUI();
-                    } else if (type === 'section' && roadId) {
+                    if (type === 'inspection') { await deleteInspectionFromFirebase(id); inspections = inspections.filter(i => i.id !== id); renderControlTable(); showProgressNotification('Vistoria excluída com sucesso!', 3); }
+                    else if (type === 'contractor') {
+                        const isUsed = roads.some(r => (r.sections?.some(s => s.contractorId === id)) || r.defaultContractorId === id);
+                        if (isUsed) { alert('Empreiteira associada a trechos, não pode ser excluída'); modal.hide(); return; }
+                        await deleteContractorFromFirebase(id); contractors = contractors.filter(c => c.id !== id); updateContractorSelects(); renderContractorsTable(); renderRoadsTable(); showProgressNotification('Empreiteira excluída com sucesso!', 3);
+                    }
+                    else if (type === 'road') {
+                        if (inspections.some(i => i.roadId === id)) { alert('Rodovia possui vistorias, não pode ser excluída'); modal.hide(); return; }
+                        await deleteRoadFromFirebase(id); roads = roads.filter(r => r.id !== id); updateRoadSelects(); renderRoadsTable(); renderControlTable(); showProgressNotification('Rodovia excluída com sucesso!', 3);
+                    }
+                    else if (type === 'inspector') {
+                        if (inspections.some(i => i.inspectorId === id)) { alert('Fiscal possui vistorias, não pode ser excluído'); modal.hide(); return; }
+                        await deleteInspectorFromFirebase(id); inspectors = inspectors.filter(i => i.id !== id); updateInspectorSelect(); renderInspectorsTable(); showProgressNotification('Fiscal excluído com sucesso!', 3);
+                    }
+                    else if (type === 'section' && roadId) {
                         const road = roads.find(r => r.id === roadId);
                         if (road) {
-                            const updatedSections = (road.sections || []).filter(s => s.id !== id);
-                            const roadRef = doc(db, COLLECTIONS.ROADS, roadId);
-                            await updateDoc(roadRef, { sections: updatedSections });
+                            const updatedSections = (road.sections || []).filter((s, idx) => idx.toString() !== id);
+                            await updateDoc(doc(db, COLLECTIONS.ROADS, roadId), { sections: updatedSections });
                             road.sections = updatedSections;
                             loadRoadSectionsModal(roadId);
-                            loadRoadsUI();
-                            loadControlData();
+                            renderRoadsTable();
+                            renderControlTable();
+                            showProgressNotification('Trecho excluído com sucesso!', 3);
                         }
                     }
                     modal.hide();
-                } catch (error) {
-                    console.error('Erro ao deletar:', error);
-                    alert('Erro ao deletar. Tente novamente.');
-                }
+                } catch (error) { console.error('Erro ao deletar:', error); alert('Erro ao deletar. Tente novamente.'); }
             };
-            
             const originalClick = confirmAction.onclick;
-            confirmAction.onclick = async () => {
-                await action();
-                if (originalClick) originalClick();
-            };
-            
+            confirmAction.onclick = async () => { await action(); if (originalClick) originalClick(); };
             modal.show();
         }
         
         function openEditContractorModal(id) {
             const contractor = contractors.find(c => c.id === id);
-            if (contractor) {
-                document.getElementById('editContractorId').value = id;
-                document.getElementById('editContractorName').value = contractor.name;
-                new bootstrap.Modal(document.getElementById('editContractorModal')).show();
-            }
+            if (contractor) { document.getElementById('editContractorId').value = id; document.getElementById('editContractorName').value = contractor.name; new bootstrap.Modal(document.getElementById('editContractorModal')).show(); }
         }
         
         async function saveContractorEdit() {
             const id = document.getElementById('editContractorId').value;
             const newName = document.getElementById('editContractorName').value.trim();
-            
-            if (!newName) {
-                alert('Informe um nome');
-                return;
-            }
-            if (contractors.some(c => c.id !== id && c.name.toLowerCase() === newName.toLowerCase())) {
-                alert('Nome já existe');
-                return;
-            }
-            
+            if (!newName) { alert('Informe um nome'); return; }
+            if (contractors.some(c => c.id !== id && c.name.toLowerCase() === newName.toLowerCase())) { alert('Nome já existe'); return; }
             await updateContractorInFirebase(id, newName);
             const contractor = contractors.find(c => c.id === id);
             if (contractor) contractor.name = newName;
-            
-            loadContractorsUI();
-            loadRoadsUI();
-            loadControlData();
-            
+            updateContractorSelects();
+            renderContractorsTable();
+            renderRoadsTable();
             bootstrap.Modal.getInstance(document.getElementById('editContractorModal')).hide();
-            alert('Empreiteira atualizada!');
+            showProgressNotification('Empreiteira atualizada com sucesso!', 3);
         }
         
-        function loadRoadSectionsModal(roadId) {
-            const road = roads.find(r => r.id === roadId);
-            if (!road) return;
-            
-            const tbody = document.getElementById('roadSectionsModalTable').getElementsByTagName('tbody')[0];
-            tbody.innerHTML = '';
-            const sections = road.sections || [];
-            [...sections].sort((a, b) => a.startKm - b.startKm).forEach((s, idx) => {
-                const c = contractors.find(c => c.id === s.contractorId);
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${s.startKm}</td>
-                        <td>${s.endKm}</td>
-                        <td>${c ? c.name : 'Não informada'}</td>
-                        <td><button class="btn btn-sm btn-danger delete-section" data-id="${idx}" data-road-id="${roadId}"><i class="fas fa-trash"></i></button></td>
-                    </tr>
-                `;
-            });
-        }
+        function openSectionsModal(roadId) { document.getElementById('modalRoadId').value = roadId; loadRoadSectionsModal(roadId); new bootstrap.Modal(document.getElementById('sectionsModal')).show(); }
         
-        function openSectionsModal(roadId) {
-            document.getElementById('modalRoadId').value = roadId;
-            loadRoadSectionsModal(roadId);
-            new bootstrap.Modal(document.getElementById('sectionsModal')).show();
-        }
-        
-        // ========== INITIALIZATION ==========
         document.addEventListener('DOMContentLoaded', async () => {
             await loadAllData();
-            
             document.getElementById('inspectionForm')?.addEventListener('submit', handleInspectionSubmit);
             document.getElementById('roadForm')?.addEventListener('submit', handleRoadSubmit);
             document.getElementById('contractorForm')?.addEventListener('submit', handleContractorSubmit);
             document.getElementById('inspectorForm')?.addEventListener('submit', handleInspectorSubmit);
             document.getElementById('sectionForm')?.addEventListener('submit', handleSectionSubmit);
             document.getElementById('addSectionBtn')?.addEventListener('click', addInspectionSection);
-            document.getElementById('refreshControl')?.addEventListener('click', loadControlData);
-            document.getElementById('showOnlyOverdue')?.addEventListener('change', loadControlData);
-            document.getElementById('searchRoad')?.addEventListener('input', loadControlData);
+            document.getElementById('refreshControl')?.addEventListener('click', () => renderControlTable());
+            document.getElementById('dateFilter')?.addEventListener('change', () => renderControlTable());
+            document.getElementById('searchRoad')?.addEventListener('input', () => renderControlTable());
             document.getElementById('saveContractorEdit')?.addEventListener('click', saveContractorEdit);
-            
+            document.getElementById('exportExcelBtn')?.addEventListener('click', exportToExcel);
+            document.getElementById('exportPDFBtn')?.addEventListener('click', exportToPDF);
+            document.getElementById('sendWhatsAppBtn')?.addEventListener('click', () => {
+                const mensagem = document.getElementById('whatsappMessage').textContent;
+                if (mensagem) {
+                    const url = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
+                    window.open(url, '_blank');
+                }
+            });
+            document.getElementById('copyMessageBtn')?.addEventListener('click', () => {
+                const mensagem = document.getElementById('whatsappMessage').textContent;
+                if (mensagem) {
+                    navigator.clipboard.writeText(mensagem);
+                    showProgressNotification('Mensagem copiada para área de transferência!', 3);
+                }
+            });
             document.getElementById('inspectionDate').value = getTodayDate();
+            
+            const inputs = document.querySelectorAll('#inspectionForm input, #inspectionForm select, #inspectionForm textarea');
+            inputs.forEach(input => {
+                input.addEventListener('change', atualizarMensagemWhatsApp);
+            });
             
             document.addEventListener('click', async (e) => {
                 const deleteBtn = e.target.closest('.delete-inspection, .delete-contractor, .delete-road, .delete-inspector, .delete-section');
@@ -1675,25 +1521,23 @@
                     else if (deleteBtn.classList.contains('delete-road')) type = 'road';
                     else if (deleteBtn.classList.contains('delete-inspector')) type = 'inspector';
                     else if (deleteBtn.classList.contains('delete-section')) type = 'section';
-                    
                     await handleDelete(deleteBtn, type, id, roadId);
                 }
             });
             
             document.addEventListener('click', (e) => {
                 const manageBtn = e.target.closest('.manage-sections');
-                if (manageBtn) {
-                    const roadId = manageBtn.getAttribute('data-id');
-                    openSectionsModal(roadId);
-                }
+                if (manageBtn) { const roadId = manageBtn.getAttribute('data-id'); openSectionsModal(roadId); }
+            });
+            
+            document.querySelectorAll('.btn-edit-contractor, .contractor-name-display').forEach(el => {
+                el.addEventListener('click', () => openEditContractorModal(el.getAttribute('data-id')));
             });
             
             const firstSection = document.querySelector('.inspection-section');
             if (firstSection) {
                 const roadSelect = firstSection.querySelector('.road-select');
-                if (roadSelect) {
-                    roadSelect.addEventListener('change', () => updateSectionContractorInfo(firstSection));
-                }
+                if (roadSelect) { roadSelect.addEventListener('change', () => autoFillKmFields(firstSection)); }
                 const startKm = firstSection.querySelector('.start-km');
                 const endKm = firstSection.querySelector('.end-km');
                 if (startKm) startKm.addEventListener('change', () => updateSectionContractorInfo(firstSection));
