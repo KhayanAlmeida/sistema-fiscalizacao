@@ -189,6 +189,14 @@
         .table th, .table td { padding: 10px 8px; vertical-align: middle; }
         @media (min-width: 768px) { .table th, .table td { padding: 14px 12px; } }
         
+        .clickable-row {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .clickable-row:hover {
+            background-color: #e7f1ff !important;
+        }
+        
         @media (max-width: 480px) { .row { margin-left: -6px; margin-right: -6px; } .col-6, .col-md-3, .col-md-4, .col-md-6 { padding-left: 6px; padding-right: 6px; } .card-body { padding: 12px; } .btn-sm { padding: 4px 8px; font-size: 0.7rem; } }
         @media (hover: none) and (pointer: coarse) { button, .btn, .nav-link, .contractor-name-display { min-height: 44px; } .btn-sm { min-height: 36px; } input, select, textarea { font-size: 16px !important; } }
         
@@ -344,6 +352,10 @@
             font-size: 0.7rem;
             color: #adb5bd;
             margin-top: 8px;
+        }
+        
+        .history-table th, .history-table td {
+            font-size: 0.8rem;
         }
     </style>
 </head>
@@ -596,11 +608,18 @@
 
     <!-- Modais -->
     <div class="modal fade" id="inspectionModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">Detalhes da Vistoria</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body" id="inspectionDetails"></div>
-                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button></div>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="inspectionModalTitle">Histórico de Vistorias</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="inspectionDetails">
+                    <div id="roadHistoryContent"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
             </div>
         </div>
     </div>
@@ -652,7 +671,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyDBxJ9X9cG1s_pXadpdG12BOhSQMJL91d0",
@@ -692,7 +711,7 @@
                     <div class="notification-icon">
                         <i class="fab fa-whatsapp"></i>
                     </div>
-                    <div class="notification-title">✓ Mensagem Copiada!</div>
+                    <div class="notification-title">✓ Sucesso!</div>
                     <div class="notification-message">${message}</div>
                     <div class="progress-bar-container">
                         <div class="progress-bar-fill" id="progressFill"></div>
@@ -902,7 +921,7 @@
             tbody.innerHTML = '';
             
             if (inspectors.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Nenhum fiscal cadastrado</td>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Nenhum fiscal cadastrado</td></td>';
                 return;
             }
             
@@ -923,7 +942,7 @@
             tbody.innerHTML = '';
             
             if (contractors.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="text-center">Nenhuma empreiteira cadastrada</td>';
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center">Nenhuma empreiteira cadastrada</td></tr>';
                 return;
             }
             
@@ -950,7 +969,7 @@
             tbody.innerHTML = '';
             
             if (roads.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center">Nenhuma rodovia cadastrada</td>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">Nenhuma rodovia cadastrada</td></tr>';
                 return;
             }
             
@@ -989,6 +1008,79 @@
             return diffDays;
         }
         
+        function openRoadHistory(roadId, roadName) {
+            const roadInspections = inspections.filter(i => i.roadId === roadId);
+            
+            if (roadInspections.length === 0) {
+                document.getElementById('roadHistoryContent').innerHTML = `
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Nenhuma vistoria registrada para esta rodovia.
+                    </div>
+                `;
+            } else {
+                const sortedInspections = [...roadInspections].sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                let historyHtml = `
+                    <div class="mb-3">
+                        <h5 class="text-primary">${roadName}</h5>
+                        <p class="text-muted">Total de vistorias: ${sortedInspections.length}</p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover history-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Fiscal</th>
+                                    <th>KM Inicial</th>
+                                    <th>KM Final</th>
+                                    <th>Empreiteira(s)</th>
+                                    <th>Observações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                for (const insp of sortedInspections) {
+                    const inspector = inspectors.find(i => i.id === insp.inspectorId);
+                    const inspectorName = inspector ? inspector.name : 'Não informado';
+                    
+                    let contractorNames = '';
+                    if (insp.contractorsList && insp.contractorsList.length > 0) {
+                        contractorNames = insp.contractorsList.join(' / ');
+                    } else if (insp.contractorId) {
+                        const contractor = contractors.find(c => c.id === insp.contractorId);
+                        contractorNames = contractor ? contractor.name : 'Não informada';
+                    } else {
+                        contractorNames = 'Não informada';
+                    }
+                    
+                    historyHtml += `
+                        <tr>
+                            <td>${formatDateBR(insp.date)}</td>
+                            <td>${inspectorName}</td>
+                            <td>${insp.startKm?.toFixed(3) || '-'}</td>
+                            <td>${insp.endKm?.toFixed(3) || '-'}</td>
+                            <td>${contractorNames}</td>
+                            <td>${insp.observations || '-'}</td>
+                        </tr>
+                    `;
+                }
+                
+                historyHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                document.getElementById('roadHistoryContent').innerHTML = historyHtml;
+            }
+            
+            document.getElementById('inspectionModalTitle').innerHTML = `<i class="fas fa-history me-2"></i>Histórico de Vistorias - ${roadName}`;
+            const modal = new bootstrap.Modal(document.getElementById('inspectionModal'));
+            modal.show();
+        }
+        
         function renderControlTable() {
             const tbody = document.getElementById('controlTableBody');
             if (!tbody) return;
@@ -1008,10 +1100,11 @@
             }
             
             if (roads.length === 0) {
-                tbody.innerHTML = '<td><td colspan="5" class="text-center">Nenhuma rodovia cadastrada</td>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Nenhuma rodovia cadastrada</td></tr>';
                 return;
             }
             
+            // Agrupar por rodovia - uma linha por rodovia
             for (const road of roads) {
                 const roadName = `${road.type}-${road.number}`;
                 if (searchTerm && !roadName.toLowerCase().includes(searchTerm)) continue;
@@ -1024,6 +1117,9 @@
                 
                 if (filteredInspections.length === 0) {
                     const row = tbody.insertRow();
+                    row.className = 'clickable-row';
+                    row.setAttribute('data-road-id', road.id);
+                    row.setAttribute('data-road-name', roadName);
                     row.insertCell(0).innerHTML = `<strong>${roadName}</strong>`;
                     row.insertCell(1).innerHTML = 'Nunca';
                     row.insertCell(2).innerHTML = '-';
@@ -1053,7 +1149,7 @@
                 
                 const trechosSet = new Set();
                 for (const inspection of latestInspections) {
-                    const trechoStr = `${inspection.startKm.toFixed(3)} a ${inspection.endKm.toFixed(3)} km`;
+                    const trechoStr = `${inspection.startKm?.toFixed(3) || '0'} a ${inspection.endKm?.toFixed(3) || '0'} km`;
                     trechosSet.add(trechoStr);
                 }
                 const lastSections = Array.from(trechosSet).join(', ');
@@ -1061,12 +1157,24 @@
                 const daysSinceLast = calcularDiasSemVistoria(latestDate);
                 
                 const row = tbody.insertRow();
+                row.className = 'clickable-row';
+                row.setAttribute('data-road-id', road.id);
+                row.setAttribute('data-road-name', roadName);
                 row.insertCell(0).innerHTML = `<strong>${roadName}</strong>`;
                 row.insertCell(1).innerHTML = formatDateBR(latestDate);
                 row.insertCell(2).innerHTML = inspectorsDisplay;
                 row.insertCell(3).innerHTML = `<span class="last-inspected-section">${lastSections}</span>`;
                 row.insertCell(4).innerHTML = daysSinceLast;
             }
+            
+            // Adicionar evento de clique nas linhas
+            document.querySelectorAll('#controlTableBody .clickable-row').forEach(row => {
+                row.removeEventListener('click', row.clickHandler);
+                const roadId = row.getAttribute('data-road-id');
+                const roadName = row.getAttribute('data-road-name');
+                row.clickHandler = () => openRoadHistory(roadId, roadName);
+                row.addEventListener('click', row.clickHandler);
+            });
         }
         
         function formatDateBR(dateString) {
