@@ -197,6 +197,22 @@
             background-color: #e7f1ff !important;
         }
         
+        .date-range-filter {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        .date-range-filter .date-input {
+            flex: 1;
+            min-width: 140px;
+        }
+        
+        @media (max-width: 768px) {
+            .date-range-filter { flex-direction: column; }
+            .date-range-filter .date-input { width: 100%; }
+        }
+        
         @media (max-width: 480px) { .row { margin-left: -6px; margin-right: -6px; } .col-6, .col-md-3, .col-md-4, .col-md-6 { padding-left: 6px; padding-right: 6px; } .card-body { padding: 12px; } .btn-sm { padding: 4px 8px; font-size: 0.7rem; } }
         @media (hover: none) and (pointer: coarse) { button, .btn, .nav-link, .contractor-name-display { min-height: 44px; } .btn-sm { min-height: 36px; } input, select, textarea { font-size: 16px !important; } }
         
@@ -209,8 +225,8 @@
         
         .filter-group { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
         .filter-group .search-box { flex: 2; min-width: 180px; }
-        .filter-group .date-filter { flex: 1; min-width: 140px; }
-        @media (max-width: 768px) { .filter-group { flex-direction: column; } .filter-group .search-box, .filter-group .date-filter { width: 100%; } }
+        .filter-group .date-range-filter { flex: 2; min-width: 300px; }
+        @media (max-width: 768px) { .filter-group { flex-direction: column; } .filter-group .search-box, .filter-group .date-range-filter { width: 100%; } }
         
         .float-export-btn { position: fixed; bottom: 30px; right: 30px; z-index: 1000; display: flex; flex-direction: column; align-items: flex-end; }
         .float-export-btn .main-btn { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: white; border: none; box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3); cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; position: relative; z-index: 2; }
@@ -573,7 +589,17 @@
                             <div class="col-12">
                                 <div class="filter-group">
                                     <div class="search-box"><input type="text" class="form-control" id="searchRoad" placeholder="Buscar rodovia..."><i class="fas fa-search"></i></div>
-                                    <div class="date-filter"><select class="form-select" id="dateFilter"><option value="all">Todas as vistorias</option><option value="7">Últimos 7 dias</option><option value="15">Últimos 15 dias</option><option value="30">Últimos 30 dias</option><option value="60">Últimos 60 dias</option><option value="90">Últimos 90 dias</option></select></div>
+                                    <div class="date-range-filter">
+                                        <div class="date-input">
+                                            <label class="form-label">Data Inicial</label>
+                                            <input type="date" class="form-control" id="startDateFilter">
+                                        </div>
+                                        <div class="date-input">
+                                            <label class="form-label">Data Final</label>
+                                            <input type="date" class="form-control" id="endDateFilter">
+                                        </div>
+                                        <button class="btn btn-outline-secondary" id="clearDateFilter" title="Limpar filtros de data"><i class="fas fa-times"></i> Limpar</button>
+                                    </div>
                                     <button class="btn btn-primary" id="refreshControl"><i class="fas fa-sync-alt me-2"></i>Atualizar</button>
                                 </div>
                             </div>
@@ -671,7 +697,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyDBxJ9X9cG1s_pXadpdG12BOhSQMJL91d0",
@@ -921,7 +947,7 @@
             tbody.innerHTML = '';
             
             if (inspectors.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Nenhum fiscal cadastrado</td></td>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Nenhum fiscal cadastrado</td></tr>';
                 return;
             }
             
@@ -1081,23 +1107,45 @@
             modal.show();
         }
         
+        function getFilterParams() {
+            const searchTerm = document.getElementById('searchRoad')?.value.toLowerCase().trim() || '';
+            const startDate = document.getElementById('startDateFilter')?.value;
+            const endDate = document.getElementById('endDateFilter')?.value;
+            return { searchTerm, startDate, endDate };
+        }
+        
+        function shouldIncludeInspection(inspection, searchTerm, startDate, endDate) {
+            const road = roads.find(r => r.id === inspection.roadId);
+            if (!road) return false;
+            
+            const roadName = `${road.type}-${road.number}`;
+            if (searchTerm && !roadName.toLowerCase().includes(searchTerm)) return false;
+            
+            const inspectionDate = new Date(inspection.date);
+            inspectionDate.setHours(0, 0, 0, 0);
+            
+            if (startDate) {
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                if (inspectionDate < start) return false;
+            }
+            
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                if (inspectionDate > end) return false;
+            }
+            
+            return true;
+        }
+        
         function renderControlTable() {
             const tbody = document.getElementById('controlTableBody');
             if (!tbody) return;
             
-            const searchTerm = document.getElementById('searchRoad')?.value.toLowerCase().trim() || '';
-            const dateFilterValue = document.getElementById('dateFilter')?.value || 'all';
+            const { searchTerm, startDate, endDate } = getFilterParams();
             
             tbody.innerHTML = '';
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            let limitDate = null;
-            if (dateFilterValue !== 'all') {
-                const days = parseInt(dateFilterValue);
-                limitDate = new Date(today);
-                limitDate.setDate(today.getDate() - days);
-            }
             
             if (roads.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="text-center">Nenhuma rodovia cadastrada</td></tr>';
@@ -1110,10 +1158,7 @@
                 if (searchTerm && !roadName.toLowerCase().includes(searchTerm)) continue;
                 
                 const roadInspections = inspections.filter(i => i.roadId === road.id);
-                let filteredInspections = roadInspections;
-                if (limitDate) {
-                    filteredInspections = roadInspections.filter(i => new Date(i.date) >= limitDate);
-                }
+                let filteredInspections = roadInspections.filter(i => shouldIncludeInspection(i, searchTerm, startDate, endDate));
                 
                 if (filteredInspections.length === 0) {
                     const row = tbody.insertRow();
@@ -1294,41 +1339,162 @@
             }
         }
         
-        function exportToExcel() {
-            const data = [['Rodovia', 'Data da Última Vistoria', 'Fiscais', 'Último Trecho Vistoriado', 'Dias Sem Vistoria']];
-            const rows = document.querySelectorAll('#controlTableBody tr');
-            for (const row of rows) {
-                const cols = row.querySelectorAll('td');
-                if (cols.length === 5 && !cols[0].innerText.includes('Nenhuma') && !cols[0].innerText.includes('encontrada')) {
-                    data.push([cols[0].innerText, cols[1].innerText, cols[2].innerText, cols[3].innerText, cols[4].innerText]);
+        function getFilteredInspectionsForExport() {
+            const { searchTerm, startDate, endDate } = getFilterParams();
+            const filteredInspections = [];
+            
+            for (const inspection of inspections) {
+                if (shouldIncludeInspection(inspection, searchTerm, startDate, endDate)) {
+                    const road = roads.find(r => r.id === inspection.roadId);
+                    if (!road) continue;
+                    
+                    const inspector = inspectors.find(i => i.id === inspection.inspectorId);
+                    const inspectorName = inspector ? inspector.name : 'Não informado';
+                    
+                    let contractorNames = '';
+                    if (inspection.contractorsList && inspection.contractorsList.length > 0) {
+                        contractorNames = inspection.contractorsList.join(' / ');
+                    } else if (inspection.contractorId) {
+                        const contractor = contractors.find(c => c.id === inspection.contractorId);
+                        contractorNames = contractor ? contractor.name : 'Não informada';
+                    } else {
+                        contractorNames = 'Não informada';
+                    }
+                    
+                    filteredInspections.push({
+                        data: formatDateBR(inspection.date),
+                        rodovia: `${road.type}-${road.number}`,
+                        kmInicial: inspection.startKm?.toFixed(3) || '-',
+                        kmFinal: inspection.endKm?.toFixed(3) || '-',
+                        fiscal: inspectorName,
+                        empreiteira: contractorNames,
+                        observacoes: inspection.observations || '-'
+                    });
                 }
             }
-            if (data.length <= 1) { alert('Não há dados para exportar'); return; }
+            
+            // Ordenar por data (mais recente primeiro)
+            filteredInspections.sort((a, b) => {
+                const dateA = a.data.split('/').reverse().join('-');
+                const dateB = b.data.split('/').reverse().join('-');
+                return dateB.localeCompare(dateA);
+            });
+            
+            return filteredInspections;
+        }
+        
+        function exportToExcel() {
+            const filteredData = getFilteredInspectionsForExport();
+            
+            if (filteredData.length === 0) {
+                alert('Não há dados para exportar com os filtros atuais');
+                return;
+            }
+            
+            const data = [['Data', 'Rodovia', 'KM Inicial', 'KM Final', 'Fiscal Responsável', 'Empreiteira(s)', 'Observações']];
+            
+            for (const item of filteredData) {
+                data.push([item.data, item.rodovia, item.kmInicial, item.kmFinal, item.fiscal, item.empreiteira, item.observacoes]);
+            }
+            
             const ws = XLSX.utils.aoa_to_sheet(data);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Controle_Vistorias');
-            XLSX.writeFile(wb, `controle_vistorias_${new Date().toISOString().split('T')[0]}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, 'Vistorias_Detalhadas');
+            
+            const startDate = document.getElementById('startDateFilter')?.value;
+            const endDate = document.getElementById('endDateFilter')?.value;
+            let filterText = '';
+            if (startDate && endDate) {
+                filterText = `_${startDate}_a_${endDate}`;
+            } else if (startDate) {
+                filterText = `_apartir_${startDate}`;
+            } else if (endDate) {
+                filterText = `_ate_${endDate}`;
+            }
+            
+            const searchTerm = document.getElementById('searchRoad')?.value.trim() || '';
+            let searchText = searchTerm ? `_busca_${searchTerm}` : '';
+            
+            XLSX.writeFile(wb, `vistorias_detalhadas${filterText}${searchText}_${new Date().toISOString().split('T')[0]}.xlsx`);
+            showProgressNotification(`Exportado ${filteredData.length} vistoria(s) com sucesso!`, 3);
         }
         
         function exportToPDF() {
+            const filteredData = getFilteredInspectionsForExport();
+            
+            if (filteredData.length === 0) {
+                alert('Não há dados para exportar com os filtros atuais');
+                return;
+            }
+            
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape' });
+            
             doc.setFontSize(18);
-            doc.text('Relatório de Controle de Vistorias', 14, 15);
+            doc.text('Relatório Detalhado de Vistorias', 14, 15);
             doc.setFontSize(10);
             doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 22);
-            const headers = [['Rodovia', 'Data da Última Vistoria', 'Fiscais', 'Último Trecho', 'Dias Sem Vistoria']];
-            const body = [];
-            const rows = document.querySelectorAll('#controlTableBody tr');
-            for (const row of rows) {
-                const cols = row.querySelectorAll('td');
-                if (cols.length === 5 && !cols[0].innerText.includes('Nenhuma') && !cols[0].innerText.includes('encontrada')) {
-                    body.push([cols[0].innerText, cols[1].innerText, cols[2].innerText, cols[3].innerText, cols[4].innerText]);
-                }
+            
+            const startDate = document.getElementById('startDateFilter')?.value;
+            const endDate = document.getElementById('endDateFilter')?.value;
+            let filterInfo = '';
+            if (startDate && endDate) {
+                filterInfo = `Período: ${formatDateBR(startDate)} a ${formatDateBR(endDate)}`;
+            } else if (startDate) {
+                filterInfo = `A partir de: ${formatDateBR(startDate)}`;
+            } else if (endDate) {
+                filterInfo = `Até: ${formatDateBR(endDate)}`;
+            } else {
+                filterInfo = 'Período: Todas as vistorias';
             }
-            if (body.length === 0) { alert('Não há dados para exportar'); return; }
-            doc.autoTable({ head: headers, body: body, startY: 28, theme: 'grid', headStyles: { fillColor: [13, 110, 253], textColor: 255, fontStyle: 'bold' }, styles: { fontSize: 8, cellPadding: 2 }, columnStyles: { 0: { cellWidth: 35 }, 1: { cellWidth: 30 }, 2: { cellWidth: 45 }, 3: { cellWidth: 50 }, 4: { cellWidth: 25 } } });
-            doc.save(`controle_vistorias_${new Date().toISOString().split('T')[0]}.pdf`);
+            
+            const searchTerm = document.getElementById('searchRoad')?.value.trim() || '';
+            if (searchTerm) {
+                filterInfo += ` | Busca: "${searchTerm}"`;
+            }
+            
+            doc.setFontSize(9);
+            doc.text(filterInfo, 14, 28);
+            doc.text(`Total de vistorias: ${filteredData.length}`, 14, 34);
+            
+            const headers = [['Data', 'Rodovia', 'KM Inicial', 'KM Final', 'Fiscal', 'Empreiteira', 'Observações']];
+            const body = [];
+            
+            for (const item of filteredData) {
+                body.push([item.data, item.rodovia, item.kmInicial, item.kmFinal, item.fiscal, item.empreiteira, item.observacoes]);
+            }
+            
+            doc.autoTable({
+                head: headers,
+                body: body,
+                startY: 38,
+                theme: 'grid',
+                headStyles: { fillColor: [13, 110, 253], textColor: 255, fontStyle: 'bold' },
+                styles: { fontSize: 8, cellPadding: 2 },
+                columnStyles: {
+                    0: { cellWidth: 22 },
+                    1: { cellWidth: 25 },
+                    2: { cellWidth: 20 },
+                    3: { cellWidth: 20 },
+                    4: { cellWidth: 35 },
+                    5: { cellWidth: 35 },
+                    6: { cellWidth: 45 }
+                }
+            });
+            
+            let filterSuffix = '';
+            if (startDate && endDate) {
+                filterSuffix = `_${startDate}_a_${endDate}`;
+            } else if (startDate) {
+                filterSuffix = `_apartir_${startDate}`;
+            } else if (endDate) {
+                filterSuffix = `_ate_${endDate}`;
+            }
+            
+            let searchSuffix = searchTerm ? `_busca_${searchTerm}` : '';
+            
+            doc.save(`vistorias_detalhadas${filterSuffix}${searchSuffix}_${new Date().toISOString().split('T')[0]}.pdf`);
+            showProgressNotification(`Exportado ${filteredData.length} vistoria(s) com sucesso!`, 3);
         }
         
         function loadRoadSectionsModal(roadId) {
@@ -1591,8 +1757,14 @@
             document.getElementById('sectionForm')?.addEventListener('submit', handleSectionSubmit);
             document.getElementById('addSectionBtn')?.addEventListener('click', addInspectionSection);
             document.getElementById('refreshControl')?.addEventListener('click', () => renderControlTable());
-            document.getElementById('dateFilter')?.addEventListener('change', () => renderControlTable());
+            document.getElementById('startDateFilter')?.addEventListener('change', () => renderControlTable());
+            document.getElementById('endDateFilter')?.addEventListener('change', () => renderControlTable());
             document.getElementById('searchRoad')?.addEventListener('input', () => renderControlTable());
+            document.getElementById('clearDateFilter')?.addEventListener('click', () => {
+                document.getElementById('startDateFilter').value = '';
+                document.getElementById('endDateFilter').value = '';
+                renderControlTable();
+            });
             document.getElementById('saveContractorEdit')?.addEventListener('click', saveContractorEdit);
             document.getElementById('exportExcelBtn')?.addEventListener('click', exportToExcel);
             document.getElementById('exportPDFBtn')?.addEventListener('click', exportToPDF);
