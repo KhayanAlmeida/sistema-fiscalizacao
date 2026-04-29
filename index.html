@@ -690,6 +690,28 @@
         </div>
     </div>
     
+    <div class="modal fade" id="editRoadModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title"><i class="fas fa-road me-2"></i>Editar Rodovia</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <input type="hidden" id="editRoadId">
+                    <div class="row mb-3">
+                        <div class="col-4"><label class="form-label required-field">Tipo</label><select class="form-select" id="editRoadType"><option value="SP">SP</option><option value="SPA">SPA</option><option value="SPD">SPD</option></select></div>
+                        <div class="col-4"><label class="form-label required-field">Número</label><input type="text" class="form-control" id="editRoadNumber" placeholder="Ex: 270"></div>
+                        <div class="col-4"><label class="form-label">Empreiteira Padrão</label><select class="form-select" id="editRoadContractor"><option value="">Nenhuma</option></select></div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6"><label class="form-label required-field">KM Inicial</label><input type="number" step="0.001" class="form-control" id="editRoadStartKm"></div>
+                        <div class="col-6"><label class="form-label required-field">KM Final</label><input type="number" step="0.001" class="form-control" id="editRoadEndKm"></div>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Descrição</label><textarea class="form-control" id="editRoadDescription" rows="2"></textarea></div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-primary" id="saveRoadEdit"><i class="fas fa-save me-2"></i>Salvar</button></div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -1028,7 +1050,8 @@
                 row.insertCell(2).innerHTML = sectionsInfo || 'Nenhum trecho cadastrado';
                 row.insertCell(3).innerHTML = `
                     <button class="btn btn-sm btn-primary manage-sections" data-id="${r.id}"><i class="fas fa-edit"></i> Trechos</button>
-                    <button class="btn btn-sm btn-danger delete-road" data-id="${r.id}"><i class="fas fa-trash"></i></button>
+                    <button class="btn btn-sm btn-warning edit-road" data-id="${r.id}" title="Editar rodovia"><i class="fas fa-pen"></i></button>
+                    <button class="btn btn-sm btn-danger delete-road" data-id="${r.id}" title="Excluir rodovia"><i class="fas fa-trash"></i></button>
                 `;
             }
         }
@@ -1718,7 +1741,15 @@
                         await deleteContractorFromFirebase(id); contractors = contractors.filter(c => c.id !== id); updateContractorSelects(); renderContractorsTable(); renderRoadsTable(); showProgressNotification('Empreiteira excluída com sucesso!', 3);
                     }
                     else if (type === 'road') {
-                        if (inspections.some(i => i.roadId === id)) { alert('Rodovia possui vistorias, não pode ser excluída'); modal.hide(); return; }
+                        const linkedInspections = inspections.filter(i => i.roadId === id);
+                        if (linkedInspections.length > 0) {
+                            const confirmExtra = confirm(`Esta rodovia possui ${linkedInspections.length} vistoria(s) registrada(s).\nAo excluir a rodovia, todas as vistorias vinculadas também serão excluídas permanentemente.\n\nDeseja continuar?`);
+                            if (!confirmExtra) { modal.hide(); return; }
+                            for (const insp of linkedInspections) {
+                                await deleteInspectionFromFirebase(insp.id);
+                            }
+                            inspections = inspections.filter(i => i.roadId !== id);
+                        }
                         await deleteRoadFromFirebase(id); roads = roads.filter(r => r.id !== id); updateRoadSelects(); renderRoadsTable(); renderControlTable(); showProgressNotification('Rodovia excluída com sucesso!', 3);
                     }
                     else if (type === 'inspector') {
@@ -1748,6 +1779,45 @@
         function openEditContractorModal(id) {
             const contractor = contractors.find(c => c.id === id);
             if (contractor) { document.getElementById('editContractorId').value = id; document.getElementById('editContractorName').value = contractor.name; new bootstrap.Modal(document.getElementById('editContractorModal')).show(); }
+        }
+        
+        function openEditRoadModal(id) {
+            const road = roads.find(r => r.id === id);
+            if (!road) return;
+            document.getElementById('editRoadId').value = id;
+            document.getElementById('editRoadType').value = road.type;
+            document.getElementById('editRoadNumber').value = road.number;
+            document.getElementById('editRoadStartKm').value = road.startKm;
+            document.getElementById('editRoadEndKm').value = road.endKm;
+            document.getElementById('editRoadDescription').value = road.description || '';
+            // Popular select de empreiteira
+            const sel = document.getElementById('editRoadContractor');
+            sel.innerHTML = '<option value="">Nenhuma</option>';
+            contractors.forEach(c => { sel.innerHTML += `<option value="${c.id}">${c.name}</option>`; });
+            sel.value = road.defaultContractorId || '';
+            new bootstrap.Modal(document.getElementById('editRoadModal')).show();
+        }
+        
+        async function saveRoadEdit() {
+            const id = document.getElementById('editRoadId').value;
+            const type = document.getElementById('editRoadType').value;
+            const number = document.getElementById('editRoadNumber').value.trim();
+            const startKm = parseFloat(document.getElementById('editRoadStartKm').value);
+            const endKm = parseFloat(document.getElementById('editRoadEndKm').value);
+            const description = document.getElementById('editRoadDescription').value.trim();
+            const defaultContractorId = document.getElementById('editRoadContractor').value || null;
+            if (!number) { alert('Informe o número da rodovia'); return; }
+            if (isNaN(startKm) || isNaN(endKm)) { alert('Informe os KMs inicial e final'); return; }
+            if (endKm <= startKm) { alert('KM final deve ser maior que KM inicial'); return; }
+            await updateDoc(doc(db, COLLECTIONS.ROADS, id), { type, number, startKm, endKm, description, defaultContractorId });
+            const road = roads.find(r => r.id === id);
+            if (road) { road.type = type; road.number = number; road.startKm = startKm; road.endKm = endKm; road.description = description; road.defaultContractorId = defaultContractorId; }
+            roads = sortRoads(roads);
+            updateRoadSelects();
+            renderRoadsTable();
+            renderControlTable();
+            bootstrap.Modal.getInstance(document.getElementById('editRoadModal')).hide();
+            showProgressNotification('Rodovia atualizada com sucesso!', 3);
         }
         
         async function saveContractorEdit() {
@@ -1830,6 +1900,13 @@
                 const manageBtn = e.target.closest('.manage-sections');
                 if (manageBtn) { const roadId = manageBtn.getAttribute('data-id'); openSectionsModal(roadId); }
             });
+            
+            document.addEventListener('click', (e) => {
+                const editRoadBtn = e.target.closest('.edit-road');
+                if (editRoadBtn) { const roadId = editRoadBtn.getAttribute('data-id'); openEditRoadModal(roadId); }
+            });
+            
+            document.getElementById('saveRoadEdit')?.addEventListener('click', saveRoadEdit);
             
             document.querySelectorAll('.btn-edit-contractor, .contractor-name-display').forEach(el => {
                 el.addEventListener('click', () => openEditContractorModal(el.getAttribute('data-id')));
