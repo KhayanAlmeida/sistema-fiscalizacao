@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -407,6 +406,9 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="control-tab" data-bs-toggle="tab" data-bs-target="#control" type="button" role="tab"><i class="fas fa-chart-line me-2"></i> Controle</button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="hours-tab" data-bs-toggle="tab" data-bs-target="#hours" type="button" role="tab"><i class="fas fa-clock me-2"></i> Controle de Horas</button>
+            </li>
         </ul>
         
         <div class="tab-content" id="myTabContent">
@@ -623,6 +625,54 @@
                                     </tr>
                                 </thead>
                                 <tbody id="controlTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controle de Horas -->
+            <div class="tab-pane fade" id="hours" role="tabpanel">
+                <div class="card">
+                    <div class="card-header"><i class="fas fa-clock me-2"></i>Controle de Horas dos Fiscais</div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="filter-group">
+                                    <div class="date-range-filter">
+                                        <div class="date-input">
+                                            <label class="form-label">Data Inicial</label>
+                                            <input type="date" class="form-control" id="hoursStartDateFilter">
+                                        </div>
+                                        <div class="date-input">
+                                            <label class="form-label">Data Final</label>
+                                            <input type="date" class="form-control" id="hoursEndDateFilter">
+                                        </div>
+                                        <button class="btn btn-outline-secondary" id="clearHoursFilter" title="Limpar filtros"><i class="fas fa-times"></i> Limpar</button>
+                                    </div>
+                                    <div class="date-input" style="min-width:180px;">
+                                        <label class="form-label">Fiscal</label>
+                                        <select class="form-select" id="hoursInspectorFilter">
+                                            <option value="">Todos os fiscais</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-primary" id="refreshHours"><i class="fas fa-sync-alt me-2"></i>Atualizar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="hoursTable">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Fiscal</th>
+                                        <th>Horário de Entrada</th>
+                                        <th>Horário de Saída</th>
+                                        <th>Total de Horas</th>
+                                        <th>Rodovias Vistoriadas</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="hoursTableBody"></tbody>
                             </table>
                         </div>
                     </div>
@@ -927,7 +977,7 @@
                 renderRoadsTable();
                 renderControlTable();
                 
-                // Popular o select de fiscal na aba Controle
+        // Popular o select de fiscal na aba Controle
                 const inspectorFilterEl = document.getElementById('inspectorFilter');
                 if (inspectorFilterEl) {
                     inspectorFilterEl.innerHTML = '<option value="">Todos os fiscais</option>';
@@ -935,6 +985,17 @@
                         inspectorFilterEl.innerHTML += `<option value="${i.id}">${i.name}</option>`;
                     });
                 }
+                
+                // Popular o select de fiscal na aba Controle de Horas
+                const hoursInspectorFilterEl = document.getElementById('hoursInspectorFilter');
+                if (hoursInspectorFilterEl) {
+                    hoursInspectorFilterEl.innerHTML = '<option value="">Todos os fiscais</option>';
+                    inspectors.forEach(i => {
+                        hoursInspectorFilterEl.innerHTML += `<option value="${i.id}">${i.name}</option>`;
+                    });
+                }
+                
+                renderHoursTable();
                 
                 showSyncSuccess();
             } catch (error) {
@@ -1262,6 +1323,97 @@
                 row.clickHandler = () => openRoadHistory(roadId, roadName);
                 row.addEventListener('click', row.clickHandler);
             });
+        }
+        
+        function calcularTotalHoras(timeStart, timeEnd) {
+            if (!timeStart || !timeEnd) return '-';
+            const [hS, mS] = timeStart.split(':').map(Number);
+            const [hE, mE] = timeEnd.split(':').map(Number);
+            const totalMinutes = (hE * 60 + mE) - (hS * 60 + mS);
+            if (totalMinutes <= 0) return '-';
+            const hours = Math.floor(totalMinutes / 60);
+            const mins = totalMinutes % 60;
+            return `${hours}h${mins > 0 ? mins + 'min' : ''}`;
+        }
+        
+        function renderHoursTable() {
+            const tbody = document.getElementById('hoursTableBody');
+            if (!tbody) return;
+            
+            const startDate = document.getElementById('hoursStartDateFilter')?.value;
+            const endDate = document.getElementById('hoursEndDateFilter')?.value;
+            const inspectorFilter = document.getElementById('hoursInspectorFilter')?.value || '';
+            
+            tbody.innerHTML = '';
+            
+            // Agrupar vistorias por data + fiscal (pois cada registro tem os mesmos horários por dia/fiscal)
+            const groups = {};
+            for (const insp of inspections) {
+                // Filtro de fiscal
+                if (inspectorFilter && insp.inspectorId !== inspectorFilter) continue;
+                
+                // Filtro de data
+                const inspDate = new Date(insp.date);
+                inspDate.setHours(0,0,0,0);
+                if (startDate) {
+                    const sd = new Date(startDate); sd.setHours(0,0,0,0);
+                    if (inspDate < sd) continue;
+                }
+                if (endDate) {
+                    const ed = new Date(endDate); ed.setHours(23,59,59,999);
+                    if (inspDate > ed) continue;
+                }
+                
+                const key = `${insp.date}_${insp.inspectorId}`;
+                if (!groups[key]) {
+                    groups[key] = {
+                        date: insp.date,
+                        inspectorId: insp.inspectorId,
+                        timeStart: insp.timeStart || null,
+                        timeEnd: insp.timeEnd || null,
+                        roads: new Set()
+                    };
+                }
+                // Pega o horário do primeiro registro com horário preenchido
+                if (!groups[key].timeStart && insp.timeStart) groups[key].timeStart = insp.timeStart;
+                if (!groups[key].timeEnd && insp.timeEnd) groups[key].timeEnd = insp.timeEnd;
+                
+                const road = roads.find(r => r.id === insp.roadId);
+                if (road) groups[key].roads.add(`${road.type}-${road.number}`);
+            }
+            
+            const sortedGroups = Object.values(groups).sort((a, b) => {
+                if (b.date !== a.date) return b.date.localeCompare(a.date);
+                const iA = inspectors.find(i => i.id === a.inspectorId)?.name || '';
+                const iB = inspectors.find(i => i.id === b.inspectorId)?.name || '';
+                return iA.localeCompare(iB);
+            });
+            
+            if (sortedGroups.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Nenhum registro encontrado para os filtros selecionados</td></tr>';
+                return;
+            }
+            
+            for (const g of sortedGroups) {
+                const inspector = inspectors.find(i => i.id === g.inspectorId);
+                const inspectorName = inspector ? inspector.name : 'Não informado';
+                const totalHoras = calcularTotalHoras(g.timeStart, g.timeEnd);
+                const roadsList = Array.from(g.roads).join(', ') || '-';
+                
+                const row = tbody.insertRow();
+                row.insertCell(0).innerHTML = formatDateBR(g.date);
+                row.insertCell(1).innerHTML = `<strong>${inspectorName}</strong>`;
+                row.insertCell(2).innerHTML = g.timeStart 
+                    ? `<span class="badge" style="background:#e7f1ff;color:#0d6efd;font-size:0.85rem;padding:6px 12px;"><i class="fas fa-sign-in-alt me-1"></i>${g.timeStart}</span>`
+                    : '<span class="text-muted">Não informado</span>';
+                row.insertCell(3).innerHTML = g.timeEnd 
+                    ? `<span class="badge" style="background:#fff3cd;color:#856404;font-size:0.85rem;padding:6px 12px;"><i class="fas fa-sign-out-alt me-1"></i>${g.timeEnd}</span>`
+                    : '<span class="text-muted">Não informado</span>';
+                row.insertCell(4).innerHTML = totalHoras !== '-' 
+                    ? `<span class="badge" style="background:#d1e7dd;color:#0a3622;font-size:0.85rem;padding:6px 12px;"><i class="fas fa-hourglass-half me-1"></i>${totalHoras}</span>`
+                    : '<span class="text-muted">-</span>';
+                row.insertCell(5).innerHTML = `<small class="text-muted">${roadsList}</small>`;
+            }
         }
         
         function formatDateBR(dateString) {
@@ -1600,7 +1752,9 @@
                     else if (uniqueIds.length > 1) { contractorId = uniqueIds[0]; contractorsList = uniqueIds.map(id => contractors.find(c => c.id === id)?.name).filter(n => n); }
                     else if (road.defaultContractorId) contractorId = road.defaultContractorId;
                 }
-                const newInspection = { inspectorId, date, roadId, startKm, endKm, contractorId, contractorsList, observations, createdAt: new Date().toISOString() };
+                const timeStart = document.getElementById('inspectionTimeStart').value || null;
+                const timeEnd = document.getElementById('inspectionTimeEnd').value || null;
+                const newInspection = { inspectorId, date, roadId, startKm, endKm, contractorId, contractorsList, observations, timeStart, timeEnd, createdAt: new Date().toISOString() };
                 await saveInspection(newInspection);
                 inspections.push({ id: newInspection.id, ...newInspection });
                 savedCount++;
@@ -1611,6 +1765,7 @@
             }
             if (savedCount > 0) {
                 renderControlTable();
+                renderHoursTable();
                 
                 const mensagem = gerarMensagemWhatsApp();
                 if (mensagem) {
@@ -1856,6 +2011,18 @@
                 renderControlTable();
             });
             document.getElementById('inspectorFilter')?.addEventListener('change', () => renderControlTable());
+            
+            // Controle de Horas
+            document.getElementById('refreshHours')?.addEventListener('click', () => renderHoursTable());
+            document.getElementById('hoursStartDateFilter')?.addEventListener('change', () => renderHoursTable());
+            document.getElementById('hoursEndDateFilter')?.addEventListener('change', () => renderHoursTable());
+            document.getElementById('hoursInspectorFilter')?.addEventListener('change', () => renderHoursTable());
+            document.getElementById('clearHoursFilter')?.addEventListener('click', () => {
+                document.getElementById('hoursStartDateFilter').value = '';
+                document.getElementById('hoursEndDateFilter').value = '';
+                document.getElementById('hoursInspectorFilter').value = '';
+                renderHoursTable();
+            });
             document.getElementById('saveContractorEdit')?.addEventListener('click', saveContractorEdit);
             document.getElementById('exportExcelBtn')?.addEventListener('click', exportToExcel);
             document.getElementById('exportPDFBtn')?.addEventListener('click', exportToPDF);
