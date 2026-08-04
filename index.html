@@ -668,7 +668,7 @@
                                         <th>Fiscal</th>
                                         <th>Horário de Entrada</th>
                                         <th>Horário de Saída</th>
-                                        <th>Total de Horas</th>
+                                        <th>Horas Extras</th>
                                         <th>Rodovias Vistoriadas</th>
                                     </tr>
                                 </thead>
@@ -1331,8 +1331,14 @@
             const [hE, mE] = timeEnd.split(':').map(Number);
             const totalMinutes = (hE * 60 + mE) - (hS * 60 + mS);
             if (totalMinutes <= 0) return '-';
-            const hours = Math.floor(totalMinutes / 60);
-            const mins = totalMinutes % 60;
+            // Jornada diária padrão: 9 horas (540 minutos)
+            const JORNADA_PADRAO_MINUTOS = 9 * 60;
+            const extrasMinutes = totalMinutes - JORNADA_PADRAO_MINUTOS;
+            if (extrasMinutes <= 0) {
+                return '0h';
+            }
+            const hours = Math.floor(extrasMinutes / 60);
+            const mins = extrasMinutes % 60;
             return `${hours}h${mins > 0 ? mins + 'min' : ''}`;
         }
         
@@ -1409,8 +1415,9 @@
                 row.insertCell(3).innerHTML = g.timeEnd 
                     ? `<span class="badge" style="background:#fff3cd;color:#856404;font-size:0.85rem;padding:6px 12px;"><i class="fas fa-sign-out-alt me-1"></i>${g.timeEnd}</span>`
                     : '<span class="text-muted">Não informado</span>';
+                const isZero = totalHoras === '0h';
                 row.insertCell(4).innerHTML = totalHoras !== '-' 
-                    ? `<span class="badge" style="background:#d1e7dd;color:#0a3622;font-size:0.85rem;padding:6px 12px;"><i class="fas fa-hourglass-half me-1"></i>${totalHoras}</span>`
+                    ? `<span class="badge" style="background:${isZero ? '#e9ecef' : '#d1e7dd'};color:${isZero ? '#6c757d' : '#0a3622'};font-size:0.85rem;padding:6px 12px;"><i class="fas fa-${isZero ? 'minus-circle' : 'plus-circle'} me-1"></i>${totalHoras}</span>`
                     : '<span class="text-muted">-</span>';
                 row.insertCell(5).innerHTML = `<small class="text-muted">${roadsList}</small>`;
             }
